@@ -1,0 +1,42 @@
+{
+  "name": "pegg-scripts",
+  "description": "Various node.js scripts for managing Pegg's Parse backend",
+  "version": "0.1.0",
+  "homepage": "https://github.com/auggernaut/pegg-scripts",
+  "author": {
+    "name": "Augustin Bralley",
+    "email": "augman@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:auggernaut/pegg-scripts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/auggernaut/pegg-scripts/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/auggernaut/pegg-scripts/blob/master/LICENSE-MIT"
+    }
+  ],
+  "main": "lib/pegg-scripts",
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "scripts": {
+    "test": "grunt nodeunit"
+  },
+  "dependencies": {
+    "node-parse-api": "~0.2.8",
+    "walk": "^2.3.3"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.5",
+    "grunt-contrib-coffee": "^0.11.1",
+    "grunt-contrib-jshint": "~0.6.4",
+    "grunt-contrib-nodeunit": "~0.2.0",
+    "grunt-contrib-watch": "~0.5.3"
+  },
+  "keywords": []
+}
