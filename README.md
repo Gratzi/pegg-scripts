@@ -1,10 +1,9 @@
-=======
 # pegg-scripts
 
-Node app that pulls from Squishlescope and pushes to Pegg
+Node.js scripts for managing the Pegg Parse backend. Written in coffescript.
 
 ## Getting Started
-First of all, clone this repository and cd into project folder.
+Clone this repository and cd into project folder.
 ```
 git clone https://github.com/auggernaut/squishle-pegg.git pegg-scripts
 ```
@@ -12,7 +11,7 @@ Install project dependencies.
 ```
 npm install
 ```
-Run index to get a list of all available scripts.
+Run index to get a list of available scripts.
 ```
 node index
 ```
