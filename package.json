@@ -29,7 +29,9 @@
   },
   "dependencies": {
     "node-parse-api": "~0.2.8",
-    "walk": "^2.3.3"
+    "walk": "^2.3.3",
+    "node-filepicker": "^0.1.2",
+    "superagent": "^0.18.2"
   },
   "devDependencies": {
     "grunt": "~0.4.5",

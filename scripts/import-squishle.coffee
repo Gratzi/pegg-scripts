@@ -1,18 +1,19 @@
 http = require 'http'
 fs = require 'fs'
+PeggParse = require './pegg-parse'
 
 # Load config defaults from JSON file.
 # Environment variables override defaults.
-loadConfig = ->
-  config = JSON.parse(fs.readFileSync(__dirname + "/../config.json", "utf-8"))
-  for i of config
-    config[i] = process.env[i.toUpperCase()] or config[i]
-  console.log "Configuration"
-  console.log config
-  config
-config = loadConfig()
+config = JSON.parse(fs.readFileSync(__dirname + "/../config.json", "utf-8"))
+for i of config
+  config[i] = process.env[i.toUpperCase()] or config[i]
+console.log '---------------------'
+console.log '   IMPORT SQUISHLE   '
+console.log '---------------------'
+console.log config
+console.log '---------------------'
 
-parse_api = require("./pegg-parse")(config)
+pp = new PeggParse(config)
 
 importFeeds = (err, res) ->
   http.get config.squishle_feed_url, (res) ->
@@ -24,7 +25,7 @@ importFeeds = (err, res) ->
     res.on "end", ->
       feeds = JSON.parse(body).sets
       handleFeed = (index) ->
-        parse_api.insertCard feeds[index], (err, data) ->
+        pp.insertCard feeds[index], (err, data) ->
           if err
             console.log err
           else

@@ -1,6 +1,6 @@
 # pegg-scripts
 
-Node.js scripts for managing the Pegg Parse backend. Written in coffescript.
+Node.js scripts for managing Pegg data/services.
 
 ## Getting Started
 Clone this repository and cd into project folder.
