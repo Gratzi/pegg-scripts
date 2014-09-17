@@ -1,6 +1,5 @@
 (function() {
-  var FilePicker, PeggParse, config, convertImage, fetchImageUrls, fetchRawImage, fp, fs, i, migrateImagesToS3, pp, pushToS3, request,
-    __hasProp = {}.hasOwnProperty;
+  var FilePicker, PeggParse, binaryParser, config, convertImage, fetchImageUrls, fetchRawImage, fp, fs, i, migrateImagesToS3, pp, pushToS3, request;
 
   fs = require('fs');
 
@@ -31,48 +30,80 @@
   fp = new FilePicker(config.filepicker_api_key);
 
   migrateImagesToS3 = function() {
-    return fetchImageUrls(0, [], function(urls) {
-      var url, _i, _len, _results;
+    return fetchImageUrls(5, 0, [], function(items) {
+      var item, _i, _len, _results;
       _results = [];
-      for (_i = 0, _len = urls.length; _i < _len; _i++) {
-        url = urls[_i];
-        _results.push(fetchRawImage(url, function(image) {
-          return pushToS3(image, function(inkBlob) {
-            return console.log(inkBlob);
-          });
+      for (_i = 0, _len = items.length; _i < _len; _i++) {
+        item = items[_i];
+        _results.push(fetchRawImage(item.id, item.url, function(res) {
+          var extension, filename, id, matches;
+          if ((res != null) && (res.body != null)) {
+            id = res.req._headers['id'];
+            matches = res.header['content-type'].match(/[^\/]+$/);
+            extension = matches[0];
+            filename = "_" + id + "." + extension;
+            console.log("" + id + ", " + filename + ", " + res.header['content-type'] + ", " + res.req._headers['url'] + ", " + res.header['content-length'] + ", " + res.body.data.length);
+            return pushToS3(res.body.data, filename, res.header['content-type'], function(inkBlob) {
+              return console.log(inkBlob);
+            });
+          }
         }));
       }
       return _results;
     });
   };
 
-  fetchImageUrls = function(page, urls, cb) {
-    return pp.getRows('Choice', {
-      page: page,
-      rows: 100
-    }, function(err, data) {
-      var d;
-      if (data != null) {
-        for (d in data) {
-          if (!__hasProp.call(data, d)) continue;
-          urls.push(d.image);
+  fetchImageUrls = function(limit, skip, urls, cb) {
+    return pp.getRows('Choice', limit, skip, (function(_this) {
+      return function(err, data) {
+        var item, _i, _len, _ref;
+        if (data.results.length > 0) {
+          _ref = data.results;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            item = _ref[_i];
+            if (item.image !== "") {
+              urls.push({
+                id: item.objectId,
+                url: item.image
+              });
+            }
+          }
+          return cb(urls);
+        } else {
+          return cb(urls);
         }
-        return fetchImageUrls(page + 1, urls.push(data, cb));
+      };
+    })(this));
+  };
+
+  fetchRawImage = function(id, url, cb) {
+    return request.get(url).set('id', id).set('url', url).buffer(true).parse(binaryParser).end(function(err, res) {
+      if (err != null) {
+        console.log(err);
+        return cb(null);
       } else {
-        return cb(urls);
+        return cb(res);
       }
     });
   };
 
-  fetchRawImage = function(url, cb) {
-    return request.get(url).end(function(err, res) {
-      return cb(res);
+  binaryParser = function(res, callback) {
+    console.log("binaryParser ftw");
+    res.setEncoding("binary");
+    res.data = "";
+    res.on("data", function(chunk) {
+      console.log("got some data...");
+      return res.data += chunk;
+    });
+    return res.on("end", function() {
+      console.log("all #done");
+      return callback(null, new Buffer(res.data, "binary"));
     });
   };
 
-  pushToS3 = function(image, cb) {
-    return fp.store(payload, filename, mimetype, query, [callback]).then(function(inkBlob) {
-      inkBlob = JSON.parse(inkBlob);
+  pushToS3 = function(payload, filename, mimetype, cb) {
+    return fp.store(payload, filename, mimetype, null, cb).then(function(inkBlob) {
+      console.log(inkBlob);
       return cb(inkBlob);
     });
   };

@@ -11,8 +11,8 @@
       this.parse = new Parse(options.parse_app_id, options.parse_master_key);
     }
 
-    PeggParse.prototype.getRows = function(type, num, cb) {
-      return this.parse.findMany(type, '', function(err, res) {
+    PeggParse.prototype.getRows = function(type, limit, skip, cb) {
+      return this.parse.findMany(type, "?limit=" + limit + "&skip=" + skip, function(err, res) {
         return cb(err, res);
       });
     };

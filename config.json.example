@@ -1,5 +1,6 @@
 {
     "squishle_feed_url": "SQUISHLE_FEED_URL",
     "parse_app_id": "PARSE_APP_ID",
-    "parse_master_key": "PARSE_MASTER_KEY"
+    "parse_master_key": "PARSE_MASTER_KEY",
+    "filepicker_api_key": "FILEPICKER_API_KEY"
 }

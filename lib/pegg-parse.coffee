@@ -7,7 +7,7 @@ class PeggParse
     @parse = new Parse options.parse_app_id, options.parse_master_key
 
   getRows: (type, limit, skip, cb ) ->
-    @parse.findMany type, "limit=#{limit}&skip=#{skip}", (err, res) ->
+    @parse.findMany type, "?limit=#{limit}&skip=#{skip}", (err, res) ->
       cb(err, res)
 
   insertCard: (doc, cb) ->
