@@ -2,6 +2,7 @@ fs = require 'fs'
 PeggParse = require './pegg-parse'
 FilePicker = require 'node-filepicker'
 request = require 'superagent'
+exec = require('child_process').exec
 
 # Load config defaults from JSON file.
 # Environment variables override defaults.
@@ -15,21 +16,15 @@ console.log config
 console.log '---------------------'
 
 pp = new PeggParse config
-fp = new FilePicker config.filepicker_api_key
 
 migrateImagesToS3 = ->
   fetchImageUrls 5, 0, [], (items) ->
     for item in items
-      fetchRawImage item.id, item.url, (res) ->
-        if res? and res.body?
-          id = res.req._headers['id']
-          matches = res.header['content-type'].match /[^\/]+$/
-          extension = matches[0]
-          filename = "_#{id}.#{extension}"
-          console.log "#{id}, #{filename}, #{res.header['content-type']}, #{res.req._headers['url']}, #{res.header['content-length']}, #{res.body.data.length}"
-#          console.log res
-          pushToS3 res.body.data, filename, res.header['content-type'], (inkBlob) ->
-            console.log inkBlob
+      matches = item.url.match /[^\/]+(#|\?|$)/
+      filename = "_#{item.id}.#{matches[0]}"
+      console.log "#{item.id}, #{filename}"
+      pushToS3 item.url, filename, (inkBlob) ->
+        console.log inkBlob
 
 
 fetchImageUrls = (limit, skip, urls, cb) ->
@@ -44,40 +39,14 @@ fetchImageUrls = (limit, skip, urls, cb) ->
       cb urls
 
 
-fetchRawImage = (id, url, cb) ->
-  request
-    .get(url)
-    .set('id', id)
-    .set('url', url)
-    .buffer(true)
-    .parse(binaryParser)
-    .end( (err, res) ->
-      if err?
-        console.log err
-        cb null
-      else
-#        console.log("res=", res.body)
-        cb res
-    )
-
-binaryParser = (res, callback) ->
-  console.log "binaryParser ftw"
-  res.setEncoding "binary"
-  res.data = ""
-  res.on "data", (chunk) ->
-    console.log "got some data..."
-    res.data += chunk
-  res.on "end", ->
-    console.log "all #done"
-    callback null, new Buffer(res.data, "binary")
-
-
-pushToS3 = (payload, filename, mimetype, cb) ->
-  fp.store(payload, filename, mimetype, null, cb).then (inkBlob) ->
-    console.log inkBlob
-#    inkBlob = JSON.parse(inkBlob)
-    cb inkBlob
-
+pushToS3 = (url, filename, cb) ->
+  command = "curl -X POST -d url='#{url}' --data-urlencode 'filename=#{filename}' https://www.filepicker.io/api/store/S3?key=#{config.filepicker_api_key}"
+  console.log command
+  exec command, (error, stdout, stderr) ->
+#    console.log error
+#    console.log stderr
+#    console.log stdout
+    cb stdout
 
 convertImage = (inkBlob) ->
   fp.convert inkBlob

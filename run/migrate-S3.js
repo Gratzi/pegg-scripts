@@ -1,5 +1,5 @@
 (function() {
-  var FilePicker, PeggParse, binaryParser, config, convertImage, fetchImageUrls, fetchRawImage, fp, fs, i, migrateImagesToS3, pp, pushToS3, request;
+  var FilePicker, PeggParse, config, convertImage, exec, fetchImageUrls, fs, i, migrateImagesToS3, pp, pushToS3, request;
 
   fs = require('fs');
 
@@ -8,6 +8,8 @@
   FilePicker = require('node-filepicker');
 
   request = require('superagent');
+
+  exec = require('child_process').exec;
 
   config = JSON.parse(fs.readFileSync(__dirname + "/../config.json", "utf-8"));
 
@@ -27,26 +29,17 @@
 
   pp = new PeggParse(config);
 
-  fp = new FilePicker(config.filepicker_api_key);
-
   migrateImagesToS3 = function() {
     return fetchImageUrls(5, 0, [], function(items) {
-      var item, _i, _len, _results;
+      var filename, item, matches, _i, _len, _results;
       _results = [];
       for (_i = 0, _len = items.length; _i < _len; _i++) {
         item = items[_i];
-        _results.push(fetchRawImage(item.id, item.url, function(res) {
-          var extension, filename, id, matches;
-          if ((res != null) && (res.body != null)) {
-            id = res.req._headers['id'];
-            matches = res.header['content-type'].match(/[^\/]+$/);
-            extension = matches[0];
-            filename = "_" + id + "." + extension;
-            console.log("" + id + ", " + filename + ", " + res.header['content-type'] + ", " + res.req._headers['url'] + ", " + res.header['content-length'] + ", " + res.body.data.length);
-            return pushToS3(res.body.data, filename, res.header['content-type'], function(inkBlob) {
-              return console.log(inkBlob);
-            });
-          }
+        matches = item.url.match(/[^\/]+(#|\?|$)/);
+        filename = "_" + item.id + "." + matches[0];
+        console.log("" + item.id + ", " + filename);
+        _results.push(pushToS3(item.url, filename, function(inkBlob) {
+          return console.log(inkBlob);
         }));
       }
       return _results;
@@ -76,35 +69,12 @@
     })(this));
   };
 
-  fetchRawImage = function(id, url, cb) {
-    return request.get(url).set('id', id).set('url', url).buffer(true).parse(binaryParser).end(function(err, res) {
-      if (err != null) {
-        console.log(err);
-        return cb(null);
-      } else {
-        return cb(res);
-      }
-    });
-  };
-
-  binaryParser = function(res, callback) {
-    console.log("binaryParser ftw");
-    res.setEncoding("binary");
-    res.data = "";
-    res.on("data", function(chunk) {
-      console.log("got some data...");
-      return res.data += chunk;
-    });
-    return res.on("end", function() {
-      console.log("all #done");
-      return callback(null, new Buffer(res.data, "binary"));
-    });
-  };
-
-  pushToS3 = function(payload, filename, mimetype, cb) {
-    return fp.store(payload, filename, mimetype, null, cb).then(function(inkBlob) {
-      console.log(inkBlob);
-      return cb(inkBlob);
+  pushToS3 = function(url, filename, cb) {
+    var command;
+    command = "curl -X POST -d url='" + url + "' --data-urlencode 'filename=" + filename + "' https://www.filepicker.io/api/store/S3?key=" + config.filepicker_api_key;
+    console.log(command);
+    return exec(command, function(error, stdout, stderr) {
+      return cb(stdout);
     });
   };
 
