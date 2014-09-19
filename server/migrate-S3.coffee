@@ -23,8 +23,13 @@ migrateImagesToS3 = ->
       matches = item.url.match /[^\/]+(#|\?|$)/
       filename = "_#{item.id}.#{matches[0]}"
       console.log "#{item.id}, #{filename}"
-      pushToS3 item.url, filename, (inkBlob) ->
+      storeImageFromUrl item.url, filename, "/full/#{filename}", (inkBlob) =>
+        inkBlob = JSON.parse inkBlob
         console.log inkBlob
+        updateFilename inkBlob.filename, item.id, (res) ->
+          console.log res
+        createThumbnail inkBlob, (res) ->
+          console.log res
 
 
 fetchImageUrls = (limit, skip, urls, cb) ->
@@ -39,18 +44,23 @@ fetchImageUrls = (limit, skip, urls, cb) ->
       cb urls
 
 
-pushToS3 = (url, filename, cb) ->
-  command = "curl -X POST -d url='#{url}' --data-urlencode 'filename=#{filename}' https://www.filepicker.io/api/store/S3?key=#{config.filepicker_api_key}"
+storeImageFromUrl = (url, filename, path, cb) ->
+  command = "curl -X POST -d url='#{url}' https://www.filepicker.io/api/store/S3?key=#{config.filepicker_api_key}&filename=#{filename}"
   console.log command
   exec command, (error, stdout, stderr) ->
-#    console.log error
-#    console.log stderr
-#    console.log stdout
     cb stdout
 
-convertImage = (inkBlob) ->
-  fp.convert inkBlob
+updateFilename = (filename, id, cb) ->
+  pp.updateRow 'Choice', filename, id, (err, data) ->
+    if err?
+      cb err
+    else
+      cb data
+
+createThumbnail = (inkBlob, cb) ->
+  url = inkBlob.url + "/convert?format=jpg&w=100&h=100"
+  filename = "_thumb_#{inkBlob.filename}"
+  storeImageFromUrl url, filename, "/thumbs/#{filename}", (res) ->
+    cb res
 
 migrateImagesToS3()
-
-

@@ -10,6 +10,10 @@ class PeggParse
     @parse.findMany type, "?limit=#{limit}&skip=#{skip}", (err, res) ->
       cb(err, res)
 
+  updateRow: (type, change, id, cb) ->
+    @parse.find type, objectId: id, (err, res) ->
+      cb(err, res)
+
   insertCard: (doc, cb) ->
     handleChoice = (cardId, doc, index) =>
       @_insertChoice cardId, doc, index, (err, data) ->

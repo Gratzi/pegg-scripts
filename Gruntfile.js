@@ -8,17 +8,16 @@ module.exports = function (grunt) {
       files: ['test/**/*_test.js']
     },
     coffee: {
-//         compile: {
-//            files: {
-//               'scripts/import-squishle.js': 'scripts/import-squishle.coffee',
-//               'lib/pegg=parse.js': 'lib/pegg-parse.coffee'
-//            }
-//         },
+       compile: {
+          files: {
+             'client/run/migrateS3.js': 'client/migrateS3.coffee'
+          }
+       },
       glob_to_multiple: {
         expand: true,
         flatten: true,
         cwd: './',
-        src: ['lib/*.coffee', 'scripts/*.coffee'],
+        src: ['server/lib/*.coffee', 'server/*.coffee'],
         dest: './run/',
         ext: '.js'
       }
@@ -40,7 +39,7 @@ module.exports = function (grunt) {
     watch: {
       scripts: {
         files: '<%= coffee.glob_to_multiple.src %>',
-        tasks: ['coffee:glob_to_multiple']
+        tasks: ['coffee:glob_to_multiple', 'coffee:compile']
       },
       gruntfile: {
         files: '<%= jshint.gruntfile.src %>',

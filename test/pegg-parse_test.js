@@ -1,6 +1,6 @@
 'use strict';
 
-var pegg_parse = require('../run/pegg-parse.js');
+var pegg_parse = require('./pegg-parse.js');
 
 /*
   ======== A Handy Little Nodeunit Reference ========
