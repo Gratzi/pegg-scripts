@@ -31,7 +31,8 @@
     "node-parse-api": "~0.2.8",
     "walk": "^2.3.3",
     "node-filepicker": "^0.1.2",
-    "superagent": "^0.18.2"
+    "superagent": "^0.18.2",
+    "express": "^4.9.4"
   },
   "devDependencies": {
     "browserify": "^5.11.2",
