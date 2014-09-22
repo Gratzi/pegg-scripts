@@ -2,9 +2,9 @@ Parse = require("node-parse-api").Parse
 
 class PeggParse
 
-  constructor: (options) ->
+  constructor: (appId, masterKey) ->
     options = {}  unless options
-    @parse = new Parse options.parse_app_id, options.parse_master_key
+    @parse = new Parse appId, masterKey
 
   getRows: (type, limit, skip, cb ) ->
     @parse.findMany type, "?limit=#{limit}&skip=#{skip}", (err, res) ->

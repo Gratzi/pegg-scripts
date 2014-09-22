@@ -20,7 +20,7 @@
       "url": "https://github.com/auggernaut/pegg-server/blob/master/LICENSE-MIT"
     }
   ],
-  "main": "lib/pegg-server",
+  "main": "old/pegg-server",
   "engines": {
     "node": ">= 0.8.0"
   },

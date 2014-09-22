@@ -10,7 +10,6 @@ module.exports = function (grunt) {
     coffee: {
        compile: {
           files: {
-             'client/run/migrateS3.js': 'client/migrateS3.coffee',
              'server/run/config/index.js': 'server/config/index.coffee'
           }
        },
@@ -18,7 +17,7 @@ module.exports = function (grunt) {
         expand: true,
         flatten: true,
         cwd: './',
-        src: ['server/lib/*.coffee', 'server/*.coffee'],
+        src: ['server/*.coffee'],
         dest: './server/run/',
         ext: '.js'
       }
@@ -31,7 +30,7 @@ module.exports = function (grunt) {
         src: 'Gruntfile.js'
       },
       lib: {
-        src: ['lib/**/*.js']
+        src: ['old/**/*.js']
       },
       test: {
         src: ['test/**/*.js']

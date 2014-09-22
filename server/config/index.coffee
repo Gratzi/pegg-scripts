@@ -8,11 +8,8 @@ exports.setEnvironment = (env) ->
       exports.DEBUG_WARN = true
       exports.DEBUG_ERROR = true
       exports.DEBUG_CLIENT = true
-      exports.DB_HOST = 'localhost'
-      exports.DB_PORT = "3306"
-      exports.DB_NAME = 'mvc_example'
-      exports.DB_USER = 'root'
-      exports.DB_PASS = 'root'
+      exports.PARSE_APP_ID = 'zogf8qxK4ULBBRBn2EhYWwddyUczTDks9w56mNsr'
+      exports.PARSE_MASTER_KEY = '3ykoKuRAKk7zEBs4xejIfUqDmIxpOtaI5wyMH10R'
 
     when "testing"
       exports.DEBUG_LOG = true

@@ -1,7 +1,9 @@
 (function() {
-  var app, config, env, express;
+  var app, config, env, express, peggParse, pp;
 
   express = require('express');
+
+  peggParse = require('./peggParse');
 
   app = express();
 
@@ -13,17 +15,20 @@
 
   config.setEnvironment(env);
 
-  app.all('/list', function(req, res) {
+  pp = new peggParse(config.PARSE_APP_ID, config.PARSE_MASTER_KEY);
+
+  app.all('/scripts', function(req, res) {
     var list;
     list = require('./list');
     return list.serverScripts(res);
   });
 
-  app.all('/getRows', function(req, res) {
-    var parse;
-    console.log(exports.DB_PORT);
-    parse = require('./parse');
-    return parse.getTable('Choice');
+  app.all('/choices', function(req, res) {
+    return pp.getTable('Choice', (function(_this) {
+      return function(data) {
+        return res.send(data);
+      };
+    })(this));
   });
 
   app.listen(app.port, function() {

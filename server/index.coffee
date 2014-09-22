@@ -1,4 +1,5 @@
 express = require 'express'
+peggParse = require './peggParse'
 
 #### Basic application initialization
 # Create app instance.
@@ -12,14 +13,15 @@ env = process.env.NODE_ENV or 'development'
 config = require './config'
 config.setEnvironment env
 
-app.all '/list', (req, res) ->
+pp = new peggParse config.PARSE_APP_ID, config.PARSE_MASTER_KEY
+
+app.all '/scripts', (req, res) ->
   list = require './list'
   list.serverScripts res
 
-app.all '/getRows', (req, res) ->
-  console.log exports.DB_PORT
-  parse = require './parse'
-  parse.getTable 'Choice'
+app.all '/choices', (req, res) ->
+  pp.getTable 'Choice', (data) =>
+    res.send data
 
 app.listen app.port, ->
   console.log "Listening on " + app.port + "\nPress CTRL-C to stop server."
