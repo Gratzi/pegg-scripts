@@ -16,5 +16,10 @@ app.all '/list', (req, res) ->
   list = require './list'
   list.serverScripts res
 
+app.all '/getRows', (req, res) ->
+  console.log exports.DB_PORT
+  parse = require './parse'
+  parse.getTable 'Choice'
+
 app.listen app.port, ->
   console.log "Listening on " + app.port + "\nPress CTRL-C to stop server."

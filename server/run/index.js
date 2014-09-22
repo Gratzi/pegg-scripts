@@ -19,6 +19,13 @@
     return list.serverScripts(res);
   });
 
+  app.all('/getRows', function(req, res) {
+    var parse;
+    console.log(exports.DB_PORT);
+    parse = require('./parse');
+    return parse.getTable('Choice');
+  });
+
   app.listen(app.port, function() {
     return console.log("Listening on " + app.port + "\nPress CTRL-C to stop server.");
   });
