@@ -1,5 +1,6 @@
 express = require 'express'
 peggParse = require './peggParse'
+assets = require 'connect-assets'
 
 #### Basic application initialization
 # Create app instance.
@@ -13,7 +14,15 @@ env = process.env.NODE_ENV or 'development'
 config = require './config'
 config.setEnvironment env
 
+# Add Connect Assets.
+app.use assets()
+# Set the client folder as static assets.
+app.use express.static process.cwd() + '/client'
+
 pp = new peggParse config.PARSE_APP_ID, config.PARSE_MASTER_KEY
+
+app.all '/', (req, res) ->
+  res.render 'index'
 
 app.all '/scripts', (req, res) ->
   list = require './list'

@@ -17,13 +17,21 @@
     };
 
     PeggParse.prototype.getRows = function(type, limit, skip, res, cb) {
-      return this._parse.findMany(type, "?limit=" + limit + "&skip=" + skip, function(err, data) {
-        if (data.results.length > 0) {
-          return cb(data.results);
-        } else {
-          return cb(res);
-        }
-      });
+      return this._parse.findMany(type, "?limit=" + limit + "&skip=" + skip, (function(_this) {
+        return function(err, data) {
+          var item, _i, _len, _ref;
+          if ((data != null) && (data.results != null) && data.results.length > 0) {
+            _ref = data.results;
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              item = _ref[_i];
+              res.push(item);
+            }
+            return cb(res);
+          } else {
+            return cb(res);
+          }
+        };
+      })(this));
     };
 
     PeggParse.prototype.updateRow = function(type, column, id, cb) {

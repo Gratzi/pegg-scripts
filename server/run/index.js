@@ -1,9 +1,11 @@
 (function() {
-  var app, config, env, express, peggParse, pp;
+  var app, assets, config, env, express, peggParse, pp;
 
   express = require('express');
 
   peggParse = require('./peggParse');
+
+  assets = require('connect-assets');
 
   app = express();
 
@@ -15,7 +17,15 @@
 
   config.setEnvironment(env);
 
+  app.use(assets());
+
+  app.use(express["static"](process.cwd() + '/client'));
+
   pp = new peggParse(config.PARSE_APP_ID, config.PARSE_MASTER_KEY);
+
+  app.all('/', function(req, res) {
+    return res.render('index');
+  });
 
   app.all('/scripts', function(req, res) {
     var list;

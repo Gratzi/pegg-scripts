@@ -1,26 +1,38 @@
 (function() {
-  var Migrate;
-
-  Parse.initialize("oBVGtJcA1YL8qAHtRHE1sm46edv3CdxSDCCBAyH3", "jOzfgxXTgD83QGnSyEcJgdCGEE4tNQz2bMEP4Zxe");
+  var Migrate, S3Bucket, request;
 
   filepicker.setKey("A36NnDQaISmXZ8IOmKGEQz");
+
+  request = window.superagent;
+
+  S3Bucket = "https://pegg.s3.amazonaws.com/";
 
   Migrate = (function() {
     function Migrate() {}
 
     Migrate.prototype.moveImagesToS3 = function() {
-      return this.fetchImageUrls(5, 0, [], function(items) {
-        var filename, item, matches, path, _i, _len, _results;
-        _results = [];
-        for (_i = 0, _len = items.length; _i < _len; _i++) {
-          item = items[_i];
-          matches = item.url.match(/[^\/]+(#|\?|$)/);
-          filename = "_" + item.id + "." + matches[0];
-          path = '/full';
-          _results.push(console.log(item));
-        }
-        return _results;
-      });
+      return this.fetchImageUrls((function(_this) {
+        return function(items) {
+          var filename, image, item, matches, _i, _len, _ref;
+          _ref = items.body;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            item = _ref[_i];
+            if (item.image.length > 0) {
+              matches = item.image.match(/[^\/]+(#|\?|$)/);
+              filename = matches != null ? "_" + item.objectId + "_." + matches[0] : "_" + item.objectId + "_.jpg";
+              image = {
+                id: item.objectId,
+                url: item.image,
+                name: filename
+              };
+              _this.saveImageToS3(image, function(InkBlob) {
+                return _this.updateImageUrl(InkBlob);
+              });
+            }
+          }
+          return null;
+        };
+      })(this));
     };
 
     Migrate.prototype.pickAndStore = function() {
@@ -32,7 +44,7 @@
         var result;
         result = InkBlobs[0];
         result.fullS3 = Config.s3.bucket + InkBlobs[0].key;
-        return filepicker.convert(InkBlobs[0], {
+        filepicker.convert(InkBlobs[0], {
           width: 100,
           height: 100,
           fit: 'clip',
@@ -41,64 +53,58 @@
           path: '/processed/'
         }, (function(_this) {
           return function(thumbBlob) {
-            thumbBlob.s3 = Config.s3.bucket + thumbBlob.key;
+            thumbBlob.s3 = S3Bucket + thumbBlob.key;
             return result.thumb = thumbBlob;
           };
         })(this));
+        return null;
       });
     };
 
-    Migrate.prototype.fetchImageUrls = function(limit, skip, urls, cb) {
-      var Choice, choiceQuery;
-      Choice = Parse.Object.extend('Choice');
-      choiceQuery = new Parse.Query(Choice);
-      choiceQuery.limit(limit);
-      choiceQuery.skip(skip);
-      return choiceQuery.find({
-        success: (function(_this) {
-          return function(choices) {
-            var choice, _i, _len;
-            if ((choices != null ? choices.length : void 0) > 0) {
-              for (_i = 0, _len = choices.length; _i < _len; _i++) {
-                choice = choices[_i];
-                urls.push({
-                  id: choice.objectId,
-                  url: choice.image
-                });
-              }
-              return cb(urls);
-            } else {
-              return cb(urls);
-            }
-          };
-        })(this),
-        error: function(error) {
-          console.log("Error fetching choices: " + error.code + " " + error.message);
-          return cb(null);
-        }
+    Migrate.prototype.fetchImageUrls = function(cb) {
+      return request.get('/choices').end(function(res) {
+        cb(res);
+        return null;
       });
     };
 
-    Migrate.prototype.saveImagesToS3 = function(url, filename, path, cb) {};
-
-    Migrate.prototype.saveUrlToParse = function(id, full, thumb, cb) {
-      var choiceQuery;
-      choiceQuery = new Parse.Query('Choice');
-      choiceQuery.equalTo('objectId', id);
-      return choiceQuery.first({
-        success: (function(_this) {
-          return function(result) {
-            if (result != null) {
-              result.set('plugFull', full);
-              result.set('plugThumb', thumb);
-              result.save();
-              return cb("success");
-            } else {
-              return cb(null);
-            }
-          };
-        })(this)
+    Migrate.prototype.updateImageUrl = function(InkBlob) {
+      return request.post('/choice').send(InkBlob).end(function(res) {
+        console.log(res);
+        return null;
       });
+    };
+
+    Migrate.prototype.saveImageToS3 = function(image, cb) {
+      var combinedBlob, storeOptions;
+      combinedBlob = {};
+      combinedBlob.id = image.id;
+      storeOptions = {
+        filename: image.name,
+        location: 'S3',
+        path: '/orig/'
+      };
+      return filepicker.storeUrl(image.url, storeOptions, (function(_this) {
+        return function(origBlob) {
+          var convertOptions;
+          combinedBlob.orig = origBlob;
+          combinedBlob.orig.S3 = S3Bucket + origBlob.key;
+          convertOptions = {
+            width: 100,
+            height: 100,
+            fit: 'clip',
+            format: 'jpg'
+          };
+          storeOptions.path = '/thumb/';
+          filepicker.convert(origBlob, convertOptions, storeOptions, function(thumbBlob) {
+            combinedBlob.thumb = thumbBlob;
+            combinedBlob.thumb.S3 = S3Bucket + thumbBlob.key;
+            console.log(JSON.stringify(combinedBlob));
+            return cb(combinedBlob);
+          });
+          return null;
+        };
+      })(this));
     };
 
     return Migrate;
