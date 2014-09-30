@@ -17,7 +17,7 @@
           _ref = items.body;
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             item = _ref[_i];
-            if (item.image.length > 0) {
+            if ((item.image != null) && item.image.length > 0) {
               matches = item.image.match(/[^\/]+(#|\?|$)/);
               filename = matches != null ? "_" + item.objectId + "_." + matches[0] : "_" + item.objectId + "_.jpg";
               image = {
