@@ -1,6 +1,7 @@
 express = require 'express'
 peggParse = require './peggParse'
 assets = require 'connect-assets'
+bodyParser = require 'body-parser'
 
 #### Basic application initialization
 # Create app instance.
@@ -14,6 +15,9 @@ env = process.env.NODE_ENV or 'development'
 config = require './config'
 config.setEnvironment env
 
+# body-parse application/json
+app.use bodyParser.json()
+
 # Add Connect Assets.
 app.use assets()
 # Set the client folder as static assets.
@@ -24,12 +28,16 @@ pp = new peggParse config.PARSE_APP_ID, config.PARSE_MASTER_KEY
 app.all '/', (req, res) ->
   res.render 'index'
 
-app.all '/scripts', (req, res) ->
+app.get '/scripts', (req, res) ->
   list = require './list'
   list.serverScripts res
 
-app.all '/choices', (req, res) ->
+app.get '/choices', (req, res) ->
   pp.getTable 'Choice', (data) =>
+    res.send data
+
+app.post '/choice', (req, res) ->
+  pp.updateRow 'Choice', req.body.id, { plug: req.body.orig, plugThumb: req.body.thumb }, (data) =>
     res.send data
 
 app.all '/users/reset/:id', (req, res) ->
