@@ -10,6 +10,10 @@
       this._parse = new Parse(appId, masterKey);
     }
 
+    PeggParse.prototype.resetUser = function(userId) {
+      return "OK I'll reset user " + userId;
+    };
+
     PeggParse.prototype.getTable = function(type, cb) {
       return this.getRows(type, 5, 0, [], function(items) {
         return cb(items);

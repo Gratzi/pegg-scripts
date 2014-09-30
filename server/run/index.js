@@ -41,6 +41,14 @@
     })(this));
   });
 
+  app.all('/users/reset/:id', function(req, res) {
+    return pp.resetUser(req.params.id, (function(_this) {
+      return function(result) {
+        return res.send(result);
+      };
+    })(this));
+  });
+
   app.listen(app.port, function() {
     return console.log("Listening on " + app.port + "\nPress CTRL-C to stop server.");
   });

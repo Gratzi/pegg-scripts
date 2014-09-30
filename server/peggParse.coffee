@@ -7,6 +7,9 @@ class PeggParse
   constructor: (appId, masterKey) ->
     @_parse = new Parse appId, masterKey
 
+  resetUser: (userId, cb) ->
+    cb "OK I'll reset user #{userId}"
+
   getTable: (type, cb) ->
     @getRows type, 5, 0, [], (items) ->
 #      for item in items

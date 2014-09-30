@@ -32,5 +32,10 @@ app.all '/choices', (req, res) ->
   pp.getTable 'Choice', (data) =>
     res.send data
 
+app.all '/users/reset/:id', (req, res) ->
+  console.log "reset user #{req.params.id}"
+  pp.resetUser req.params.id, (result) =>
+    res.send result
+
 app.listen app.port, ->
   console.log "Listening on " + app.port + "\nPress CTRL-C to stop server."
