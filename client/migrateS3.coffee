@@ -7,7 +7,7 @@ class Migrate
   moveImagesToS3: ->
     @fetchImageUrls (items) =>
       for item in items.body
-        if item.image.length > 0
+        if item.image? and item.image.length > 0
           matches = item.image.match /[^\/]+(#|\?|$)/
           filename = if matches? then "_#{item.objectId}_.#{matches[0]}" else "_#{item.objectId}_.jpg"
           image =
