@@ -14,10 +14,35 @@ class PeggParse
       objectId: userId
 
     @_parse.find 'Pref', user: user, (err, data) =>
-      console.log data
+      console.log err
       for row in data.results
         @_parse.delete 'Pref', row.objectId, (err, data) =>
-          console.log data
+          console.log data or err
+
+    @getTable 'Card', (results) =>
+      console.log "userId: " + userId
+      for row in results
+        if row.hasPreffed?
+          if row.hasPreffed.indexOf(userId) > -1
+            row.hasPreffed.splice userId, 1
+            @_parse.update 'Card', row.objectId, row, (err, data) =>
+              console.log data or err
+
+    @_parse.find 'Pegg', user: user, (err, data) =>
+      for row in data.results
+        @_parse.delete 'Pegg', row.objectId, (err, data) =>
+          console.log data or err
+
+
+    @getTable 'Pref', (results) =>
+      console.log "userId: " + userId
+      for row in results
+        if row.hasPegged?
+          if row.hasPegged.indexOf(userId) > -1
+            row.hasPegged.splice userId, 1
+            @_parse.update 'Pref', row.objectId, row, (err, data) =>
+              console.log data or err
+
 
     success =
       message: "Success! User #{userId} is fresh like spring pheasant"

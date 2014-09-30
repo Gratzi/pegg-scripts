@@ -22,14 +22,76 @@
       }, (function(_this) {
         return function(err, data) {
           var row, _i, _len, _ref, _results;
-          console.log(data);
+          console.log(err);
           _ref = data.results;
           _results = [];
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             row = _ref[_i];
             _results.push(_this._parse["delete"]('Pref', row.objectId, function(err, data) {
-              return console.log(data);
+              return console.log(data || err);
             }));
+          }
+          return _results;
+        };
+      })(this));
+      this.getTable('Card', (function(_this) {
+        return function(results) {
+          var row, _i, _len, _results;
+          console.log("userId: " + userId);
+          _results = [];
+          for (_i = 0, _len = results.length; _i < _len; _i++) {
+            row = results[_i];
+            if (row.hasPreffed != null) {
+              if (row.hasPreffed.indexOf(userId) > -1) {
+                row.hasPreffed.splice(userId, 1);
+                _results.push(_this._parse.update('Card', row.objectId, row, function(err, data) {
+                  return console.log(data || err);
+                }));
+              } else {
+                _results.push(void 0);
+              }
+            } else {
+              _results.push(void 0);
+            }
+          }
+          return _results;
+        };
+      })(this));
+      this._parse.find('Pegg', {
+        user: user
+      }, (function(_this) {
+        return function(err, data) {
+          var row, _i, _len, _ref, _results;
+          _ref = data.results;
+          _results = [];
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            row = _ref[_i];
+            _results.push(_this._parse["delete"]('Pegg', row.objectId, function(err, data) {
+              return console.log(data || err);
+            }));
+          }
+          return _results;
+        };
+      })(this));
+      this.getTable('Pref', (function(_this) {
+        return function(results) {
+          var row, _i, _len, _results;
+          console.log("userId: " + userId);
+          _results = [];
+          for (_i = 0, _len = results.length; _i < _len; _i++) {
+            row = results[_i];
+            if (row.hasPegged != null) {
+              if (row.hasPegged.indexOf(userId) > -1) {
+                row.hasPegged.splice(userId, 1);
+                _results.push(_this._parse.update('Pref', row.objectId, row, function(err, data) {
+                  return console.log(data || err);
+                }));
+              } else {
+                _results.push(void 0);
+              }
+            } else {
+              _results.push(void 0);
+            }
           }
           return _results;
         };
