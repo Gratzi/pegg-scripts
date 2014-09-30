@@ -8,14 +8,21 @@ class PeggParse
     @_parse = new Parse appId, masterKey
 
   resetUser: (userId, cb) ->
+    user =
+      __type: "Pointer"
+      className:"_User"
+      objectId: userId
+
+    @_parse.find 'Pref', user: user, (err, data) =>
+      console.log data
+      for row in data.results
+        @_parse.delete 'Pref', row.objectId, (err, data) =>
+          console.log data
+
     cb "OK I'll reset user #{userId}"
 
   getTable: (type, cb) ->
-    @getRows type, 5, 0, [], (items) ->
-#      for item in items
-#        matches = item.url.match /[^\/]+(#|\?|$)/
-#        filename = "_#{item.id}.#{matches[0]}"
-#        console.log "#{item.id}, #{filename}"
+    @getRows type, 50, 0, [], (items) ->
       cb items
 
 
@@ -24,13 +31,13 @@ class PeggParse
       if data? and data.results? and data.results.length > 0
         for item in data.results
           res.push item
-        cb res
-#        @getRows type, limit, skip + limit, res, cb
+#        cb res
+        @getRows type, limit, skip + limit, res, cb
       else
         cb res
 
-  updateRow: (type, column, id, cb) ->
-    @_parse.updateRow type, column, id, (err, data) ->
+  updateRow: (type, id, json, cb) ->
+    @_parse.update type, id, json, (err, data) ->
       if err?
         cb err
       else
