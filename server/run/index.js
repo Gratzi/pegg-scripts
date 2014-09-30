@@ -1,11 +1,13 @@
 (function() {
-  var app, assets, config, env, express, peggParse, pp;
+  var app, assets, bodyParser, config, env, express, peggParse, pp;
 
   express = require('express');
 
   peggParse = require('./peggParse');
 
   assets = require('connect-assets');
+
+  bodyParser = require('body-parser');
 
   app = express();
 
@@ -17,6 +19,8 @@
 
   config.setEnvironment(env);
 
+  app.use(bodyParser.json());
+
   app.use(assets());
 
   app.use(express["static"](process.cwd() + '/client'));
@@ -27,13 +31,13 @@
     return res.render('index');
   });
 
-  app.all('/scripts', function(req, res) {
+  app.get('/scripts', function(req, res) {
     var list;
     list = require('./list');
     return list.serverScripts(res);
   });
 
-  app.all('/choices', function(req, res) {
+  app.get('/choices', function(req, res) {
     return pp.getTable('Choice', (function(_this) {
       return function(data) {
         return res.send(data);
@@ -41,7 +45,19 @@
     })(this));
   });
 
+  app.post('/choice', function(req, res) {
+    return pp.updateRow('Choice', req.body.id, {
+      plug: req.body.orig,
+      plugThumb: req.body.thumb
+    }, (function(_this) {
+      return function(data) {
+        return res.send(data);
+      };
+    })(this));
+  });
+
   app.all('/users/reset/:id', function(req, res) {
+    console.log("reset user " + req.params.id);
     return pp.resetUser(req.params.id, (function(_this) {
       return function(result) {
         return res.send(result);
