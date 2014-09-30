@@ -59,7 +59,8 @@
   app.all('/users/reset/:id', function(req, res) {
     console.log("reset user " + req.params.id);
     return pp.resetUser(req.params.id, (function(_this) {
-      return function(result) {
+      return function(result, status) {
+        res.status(status);
         return res.send(result);
       };
     })(this));

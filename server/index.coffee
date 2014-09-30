@@ -42,7 +42,8 @@ app.post '/choice', (req, res) ->
 
 app.all '/users/reset/:id', (req, res) ->
   console.log "reset user #{req.params.id}"
-  pp.resetUser req.params.id, (result) =>
+  pp.resetUser req.params.id, (result, status) =>
+    res.status status
     res.send result
 
 app.listen app.port, ->

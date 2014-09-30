@@ -1,16 +1,39 @@
 request = window.superagent
 
 class Admin
-  resetUser: (userId) =>
-    'asdf'
+  resetUser: (userId, cb) =>
+    request
+      .get "/users/reset/#{userId}"
+      .set('Accept', 'application/json')
+      .end (res) ->
+        res.json = (res.body)
+        console.log res.json, res.status
+        cb res if cb?
 
 window.admin = new Admin
 
 $(document).ready ->
-  $('#resetUser_submit').on 'click', ->
+  _resetUserSubmit = () =>
+    # reset messsage
+    $('#resetUser_message')
+      .html("...")
+      .parent()
+        .removeClass('has-success')
+        .removeClass('has-error')
+
+    # do the reset thing
     userId = $('#resetUser_id').val()
-    request
-      .get "/users/reset/#{userId}"
-      .end (res) ->
-        console.log res
-        return null
+    window.admin.resetUser userId, (res) ->
+      if res.status is 200
+        $('#resetUser_message')
+          .html(res.json.message)
+          .parent().addClass('has-success')
+      else
+        $('#resetUser_message')
+          .html(res.json.message)
+          .parent().addClass('has-error')
+
+  $('#resetUser').on 'submit', ->
+    _resetUserSubmit()
+    return false
+

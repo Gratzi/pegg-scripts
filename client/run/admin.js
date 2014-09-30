@@ -9,8 +9,14 @@
       this.resetUser = __bind(this.resetUser, this);
     }
 
-    Admin.prototype.resetUser = function(userId) {
-      return 'asdf';
+    Admin.prototype.resetUser = function(userId, cb) {
+      return request.get("/users/reset/" + userId).set('Accept', 'application/json').end(function(res) {
+        res.json = res.body;
+        console.log(res.json, res.status);
+        if (cb != null) {
+          return cb(res);
+        }
+      });
     };
 
     return Admin;
@@ -20,13 +26,24 @@
   window.admin = new Admin;
 
   $(document).ready(function() {
-    return $('#resetUser_submit').on('click', function() {
-      var userId;
-      userId = $('#resetUser_id').val();
-      return request.get("/users/reset/" + userId).end(function(res) {
-        console.log(res);
-        return null;
-      });
+    var _resetUserSubmit;
+    _resetUserSubmit = (function(_this) {
+      return function() {
+        var userId;
+        $('#resetUser_message').html("...").parent().removeClass('has-success').removeClass('has-error');
+        userId = $('#resetUser_id').val();
+        return window.admin.resetUser(userId, function(res) {
+          if (res.status === 200) {
+            return $('#resetUser_message').html(res.json.message).parent().addClass('has-success');
+          } else {
+            return $('#resetUser_message').html(res.json.message).parent().addClass('has-error');
+          }
+        });
+      };
+    })(this);
+    return $('#resetUser').on('submit', function() {
+      _resetUserSubmit();
+      return false;
     });
   });
 

@@ -11,7 +11,7 @@
     }
 
     PeggParse.prototype.resetUser = function(userId, cb) {
-      var user;
+      var failure, success, user;
       user = {
         __type: "Pointer",
         className: "_User",
@@ -34,7 +34,13 @@
           return _results;
         };
       })(this));
-      return cb("OK I'll reset user " + userId);
+      success = {
+        message: "Success! User " + userId + " is fresh like spring pheasant"
+      };
+      failure = {
+        message: "FAIL!!! BOOOO!!!! OMGWTFBBQ"
+      };
+      return cb(success, 200);
     };
 
     PeggParse.prototype.getTable = function(type, cb) {

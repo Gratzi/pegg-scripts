@@ -19,7 +19,12 @@ class PeggParse
         @_parse.delete 'Pref', row.objectId, (err, data) =>
           console.log data
 
-    cb "OK I'll reset user #{userId}"
+    success =
+      message: "Success! User #{userId} is fresh like spring pheasant"
+    failure =
+      message: "FAIL!!! BOOOO!!!! OMGWTFBBQ"
+    cb success, 200
+    # cb failure, 500
 
   getTable: (type, cb) ->
     @getRows type, 50, 0, [], (items) ->
