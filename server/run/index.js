@@ -58,10 +58,21 @@
 
   app.all('/users/reset/:id', function(req, res) {
     console.log("reset user " + req.params.id);
-    return pp.resetUser(req.params.id, (function(_this) {
-      return function(result, status) {
-        res.status(status);
-        return res.send(result);
+    return pp.resetUser(req.params.id).done((function(_this) {
+      return function(results) {
+        res.status(200);
+        return res.send({
+          message: "Success! User " + userId + " is fresh like spring pheasant",
+          results: results
+        });
+      };
+    })(this)).fail((function(_this) {
+      return function(error) {
+        res.status(500);
+        return res.send({
+          message: "FAIL!!! BOOOO!!!! OMGWTFBBQ",
+          error: error
+        });
       };
     })(this));
   });

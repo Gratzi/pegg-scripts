@@ -42,9 +42,13 @@ app.post '/choice', (req, res) ->
 
 app.all '/users/reset/:id', (req, res) ->
   console.log "reset user #{req.params.id}"
-  pp.resetUser req.params.id, (result, status) =>
-    res.status status
-    res.send result
+  pp.resetUser req.params.id
+    .done (results) =>
+      res.status 200
+      res.send message: "Success! User #{userId} is fresh like spring pheasant", results: results
+    .fail (error) =>
+      res.status 500
+      res.send message: "FAIL!!! BOOOO!!!! OMGWTFBBQ", error: error
 
 app.listen app.port, ->
   console.log "Listening on " + app.port + "\nPress CTRL-C to stop server."

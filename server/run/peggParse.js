@@ -1,5 +1,6 @@
 (function() {
-  var Parse, PeggParse, fs;
+  var Parse, PeggParse, fs,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   fs = require('fs');
 
@@ -7,102 +8,93 @@
 
   PeggParse = (function() {
     function PeggParse(appId, masterKey) {
+      this._clearHasPegged = __bind(this._clearHasPegged, this);
+      this._clearHasPreffed = __bind(this._clearHasPreffed, this);
+      this.deletePeggs = __bind(this.deletePeggs, this);
+      this.deletePrefs = __bind(this.deletePrefs, this);
       this._parse = new Parse(appId, masterKey);
     }
 
     PeggParse.prototype.resetUser = function(userId, cb) {
-      var failure, success, user;
+      var clearedHasPegged, clearedHasPreffed, deletedPeggs, deletedPrefs, user;
       user = {
         __type: "Pointer",
         className: "_User",
         objectId: userId
       };
-      this._parse.find('Pref', {
+      deletedPrefs = this.deletePrefs(user);
+      deletedPeggs = this.deletePeggs(user);
+      clearedHasPreffed = this.clearHasPreffed(userId);
+      clearedHasPegged = this.clearHasPegged(userId);
+      return Parse.Promise.when(deletedPrefs, deletedPeggs, clearedHasPreffed, clearedHasPegged);
+    };
+
+    PeggParse.prototype.deletePrefs = function(user) {
+      return this._parse.find('Pref', {
         user: user
-      }, (function(_this) {
-        return function(err, data) {
-          var row, _i, _len, _ref, _results;
-          console.log(err);
+      }).then((function(_this) {
+        return function(data) {
+          var i, prefRowsDeleted, row, _i, _len, _ref;
+          prefRowsDeleted = [];
           _ref = data.results;
-          _results = [];
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            row = _ref[_i];
-            _results.push(_this._parse["delete"]('Pref', row.objectId, function(err, data) {
-              return console.log(data || err);
-            }));
+          for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+            row = _ref[i];
+            prefRowsDeleted[i] = _this._parse["delete"]('Pref', row.objectId);
           }
-          return _results;
+          return Parse.Promise.when(prefRowsDeleted);
         };
       })(this));
-      this.getTable('Card', (function(_this) {
+    };
+
+    PeggParse.prototype.deletePeggs = function(user) {
+      return this._parse.find('Pegg', {
+        user: user
+      }).then((function(_this) {
+        return function(data) {
+          var i, peggRowsDeleted, row, _i, _len, _ref;
+          peggRowsDeleted = [];
+          _ref = data.results;
+          for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+            row = _ref[i];
+            peggRowsDeleted[i] = _this._parse["delete"]('Pegg', row.objectId);
+          }
+          return Parse.Promise.when(peggRowsDeleted);
+        };
+      })(this));
+    };
+
+    PeggParse.prototype._clearHasPreffed = function(userId) {
+      return this.getTable('Card').then((function(_this) {
         return function(results) {
-          var row, _i, _len, _results;
-          console.log("userId: " + userId);
-          _results = [];
-          for (_i = 0, _len = results.length; _i < _len; _i++) {
-            row = results[_i];
-            if (row.hasPreffed != null) {
-              if (row.hasPreffed.indexOf(userId) > -1) {
-                row.hasPreffed.splice(userId, 1);
-                _results.push(_this._parse.update('Card', row.objectId, row, function(err, data) {
-                  return console.log(data || err);
-                }));
-              } else {
-                _results.push(void 0);
-              }
-            } else {
-              _results.push(void 0);
+          var i, preffedRowsCleared, row, _i, _len;
+          preffedRowsCleared = [];
+          for (i = _i = 0, _len = results.length; _i < _len; i = ++_i) {
+            row = results[i];
+            if ((row.hasPreffed != null) && row.hasPreffed.indexOf(userId) > -1) {
+              row.hasPreffed.splice(userId, 1);
+              preffedRowsCleared[i] = _this._parse.update('Card', row.objectId, row);
             }
           }
-          return _results;
+          return Parse.Promise.when(preffedRowsCleared);
         };
       })(this));
-      this._parse.find('Pegg', {
-        user: user
-      }, (function(_this) {
-        return function(err, data) {
-          var row, _i, _len, _ref, _results;
-          _ref = data.results;
-          _results = [];
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            row = _ref[_i];
-            _results.push(_this._parse["delete"]('Pegg', row.objectId, function(err, data) {
-              return console.log(data || err);
-            }));
-          }
-          return _results;
-        };
-      })(this));
-      this.getTable('Pref', (function(_this) {
+    };
+
+    PeggParse.prototype._clearHasPegged = function(userId) {
+      return this.getTable('Pref').then((function(_this) {
         return function(results) {
-          var row, _i, _len, _results;
-          console.log("userId: " + userId);
-          _results = [];
-          for (_i = 0, _len = results.length; _i < _len; _i++) {
-            row = results[_i];
-            if (row.hasPegged != null) {
-              if (row.hasPegged.indexOf(userId) > -1) {
-                row.hasPegged.splice(userId, 1);
-                _results.push(_this._parse.update('Pref', row.objectId, row, function(err, data) {
-                  return console.log(data || err);
-                }));
-              } else {
-                _results.push(void 0);
-              }
-            } else {
-              _results.push(void 0);
+          var i, peggedRowsCleared, row, _i, _len;
+          peggedRowsCleared = [];
+          for (i = _i = 0, _len = results.length; _i < _len; i = ++_i) {
+            row = results[i];
+            if ((row.hasPegged != null) && row.hasPegged.indexOf(userId) > -1) {
+              row.hasPegged.splice(userId, 1);
+              peggedRowsCleared[i] = _this._parse.update('Pref', row.objectId, row);
             }
           }
-          return _results;
+          return Parse.Promise.when(peggedRowsCleared);
         };
       })(this));
-      success = {
-        message: "Success! User " + userId + " is fresh like spring pheasant"
-      };
-      failure = {
-        message: "FAIL!!! BOOOO!!!! OMGWTFBBQ"
-      };
-      return cb(success, 200);
     };
 
     PeggParse.prototype.getTable = function(type, cb) {
