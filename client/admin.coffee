@@ -28,10 +28,14 @@ $(document).ready ->
         $('#resetUser_message')
           .html(res.json.message)
           .parent().addClass('has-success')
+        $('#resetUser_detail')
+          .html JSON.stringify res.json.results
       else
         $('#resetUser_message')
-          .html(res.json.message)
+          .html(res.json?.message or res.error)
           .parent().addClass('has-error')
+        $('#resetUser_detail')
+          .html JSON.stringify(res.json?.error or res.error)
 
   $('#resetUser').on 'submit', ->
     _resetUserSubmit()

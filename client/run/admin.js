@@ -33,10 +33,13 @@
         $('#resetUser_message').html("...").parent().removeClass('has-success').removeClass('has-error');
         userId = $('#resetUser_id').val();
         return window.admin.resetUser(userId, function(res) {
+          var _ref, _ref1;
           if (res.status === 200) {
-            return $('#resetUser_message').html(res.json.message).parent().addClass('has-success');
+            $('#resetUser_message').html(res.json.message).parent().addClass('has-success');
+            return $('#resetUser_detail').html(JSON.stringify(res.json.results));
           } else {
-            return $('#resetUser_message').html(res.json.message).parent().addClass('has-error');
+            $('#resetUser_message').html(((_ref = res.json) != null ? _ref.message : void 0) || res.error).parent().addClass('has-error');
+            return $('#resetUser_detail').html(JSON.stringify(((_ref1 = res.json) != null ? _ref1.error : void 0) || res.error));
           }
         });
       };
