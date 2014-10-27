@@ -16,6 +16,9 @@ Run index to get a list of available scripts.
 node index
 ```
 
+## TODO
+
+- use Bluebird promises since the node Parse library doesn't support them natively
 
 ## Documentation
 _(Coming soon)_

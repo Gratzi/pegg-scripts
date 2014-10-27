@@ -20,6 +20,8 @@ $(document).ready ->
       .parent()
         .removeClass('has-success')
         .removeClass('has-error')
+    $('#resetUser_detail')
+      .html("")
 
     # do the reset thing
     userId = $('#resetUser_id').val()

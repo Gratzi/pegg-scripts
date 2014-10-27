@@ -41,12 +41,13 @@ app.post '/choice', (req, res) ->
     res.send data
 
 app.all '/users/reset/:id', (req, res) ->
-  console.log "reset user #{req.params.id}"
-  pp.resetUser req.params.id
-    .done (results) =>
+  userId = req.params.id
+  console.log "reset user #{userId}"
+  pp.resetUser userId
+    .then (results) =>
       res.status 200
       res.send message: "Success! User #{userId} is fresh like spring pheasant", results: results
-    .fail (error) =>
+    .catch (error) =>
       res.status 500
       res.send message: "FAIL!!! BOOOO!!!! OMGWTFBBQ", error: error
 
