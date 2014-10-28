@@ -45,9 +45,11 @@ app.all '/users/reset/:id', (req, res) ->
   console.log "reset user #{userId}"
   pp.resetUser userId
     .then (results) =>
+      console.log "done."
       res.status 200
       res.send message: "Success! User #{userId} is fresh like spring pheasant", results: results
     .catch (error) =>
+      console.log error.stack
       res.status 500
       res.send message: "FAIL!!! BOOOO!!!! OMGWTFBBQ", error: error
 

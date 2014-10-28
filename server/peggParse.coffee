@@ -25,13 +25,14 @@ class PeggParse
     # find prefs for this user, and return a promise
     @_parse.findAsync 'Pref', user: user
       .then (data) =>
-        console.log "deleting prefs for user #{JSON.stringify user}"
+        console.log "deleting prefs for user #{user.objectId}"
+        # console.log " -> results: #{@_pretty data}"
         # make a bunch of sub-promises that resolve when the row is successfully deleted
         prefRowsDeleted = []
         for pref, i in data.results
           prefRowsDeleted[i] = @_parse.deleteAsync 'Pref', pref.objectId
-            .then (pref) ->
-              message = "deleted pref: #{JSON.stringify pref}"
+            .then =>
+              message = "deleted pref: #{@_pretty pref}"
               console.log message
               { message, pref }
         # return a promise that resolves iff all of the rows were deleted, otherwise fails
@@ -41,13 +42,14 @@ class PeggParse
     # find peggs for this user, and return a promise
     @_parse.findAsync 'Pegg', user: user
       .then (data) =>
-        console.log "deleting peggs for user #{JSON.stringify user}"
+        console.log "deleting peggs for user #{user.objectId}"
+        # console.log " -> results: #{@_pretty data}"
         # make a bunch of sub-promises that resolve when the row is successfully deleted
         peggRowsDeleted = []
         for pegg, i in data.results
           peggRowsDeleted[i] = @_parse.deleteAsync 'Pegg', pegg.objectId
-            .then (pegg) ->
-              message = "deleted pegg: #{JSON.stringify pegg}"
+            .then =>
+              message = "deleted pegg: #{@_pretty pegg}"
               console.log message
               { message, pegg }
         # return a promise that resolves iff all of the rows were deleted, otherwise fails
@@ -58,13 +60,14 @@ class PeggParse
     @getTable 'Card'
       .then (results) =>
         console.log "clearing hasPreffed for user #{userId}"
+        # console.log " -> results: #{@_pretty results}"
         preffedRowsCleared = []
         # make a bunch of sub-promises that resolve when the row is successfully cleared
         for card, i in results
           if card.hasPreffed? and card.hasPreffed.indexOf(userId) > -1
             card.hasPreffed = _.uniq(card.hasPreffed).splice userId, 1
             preffedRowsCleared[i] = @_parse.updateAsync 'Card', card.objectId, card
-              .then (card) ->
+              .then ->
                 message = "cleared hasPreffed from card: #{card.objectId}"
                 console.log message
                 { message, card }
@@ -76,38 +79,43 @@ class PeggParse
     @getTable 'Pref'
       .then (results) =>
         console.log "clearing hasPegged for user #{userId}"
+        # console.log " -> results: #{@_pretty results}"
         peggedRowsCleared = []
         # make a bunch of sub-promises that resolve when the row is successfully cleared
         for card, i in results
           if card.hasPegged? and card.hasPegged.indexOf(userId) > -1
             card.hasPegged = _.uniq(card.hasPegged).splice userId, 1
             peggedRowsCleared[i] = @_parse.updateAsync 'Pref', card.objectId, card
-              .then (card) ->
+              .then ->
                 message = "cleared hasPegged from card: #{card.objectId}"
                 console.log message
                 { message, card }
         # return a promise that resolves iff all of the rows were cleared, otherwise fails
         Promise.all peggedRowsCleared
 
-  getTable: (type, cb) ->
-    @getRows type, 50, 0, [], (items) ->
-      cb items
+  getTable: (type) ->
+    _args = _.values(arguments).join ', '
+    console.log "getTable #{@_pretty _args}"
+    @getRows type, 50, 0, []
 
-  getRows: (type, limit, skip, res, cb) ->
-    @_parse.findManyAsync type, "?limit=#{limit}&skip=#{skip}", (err, data) =>
-      if data? and data.results? and data.results.length > 0
-        for item in data.results
-          res.push item
-#        cb res
-        @getRows type, limit, skip + limit, res, cb
-      else
-        cb res
+  getRows: (type, limit, skip, res) ->
+    _args = _.values(arguments).join ', '
+    console.log "getRows #{@_pretty _args}"
+    @_parse.findManyAsync type, "?limit=#{limit}&skip=#{skip}"
+      .then (data) =>
+        console.log "getRows > findManyAsync -> then"
+        if data? and data.results? and data.results.length > 0
+          # console.log " -> results: #{@_pretty data.results}"
+          for item in data.results
+            res.push item
+          @getRows type, limit, skip + limit, res
+        else
+          console.log " -> returning #{@_pretty _args}"
+          res
 
-  updateRow: (type, id, json, cb) ->
-    @_parse.updateAsync type, id, json, (err, data) ->
-      if err?
-        cb err
-      else
-        cb data
+  updateRow: (type, id, json) ->
+    @_parse.updateAsync type, id, json
 
+  _pretty: (thing) ->
+    JSON.stringify thing, null, 2
 module.exports = PeggParse

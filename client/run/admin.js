@@ -31,7 +31,7 @@
     _resetUserSubmit = (function(_this) {
       return function() {
         var userId;
-        $('#resetUser_message').html("...").parent().removeClass('has-success').removeClass('has-error');
+        $('#resetUser_message').html("working ...").parent().removeClass('has-success').removeClass('has-error');
         $('#resetUser_detail').html("");
         userId = $('#resetUser_id').val();
         return window.admin.resetUser(userId, function(res) {

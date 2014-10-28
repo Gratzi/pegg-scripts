@@ -16,7 +16,7 @@ $(document).ready ->
   _resetUserSubmit = () =>
     # reset messsage
     $('#resetUser_message')
-      .html("...")
+      .html("working ...")
       .parent()
         .removeClass('has-success')
         .removeClass('has-error')
