@@ -5,7 +5,7 @@ Node.js scripts for managing Pegg data/services.
 ## Getting Started
 Clone this repository and cd into project folder.
 ```
-git clone https://github.com/auggernaut/squishle-pegg.git pegg-scripts
+git clone https://github.com/PeggApp/pegg-scripts
 ```
 Install project dependencies.
 ```
