@@ -25,7 +25,7 @@ class PeggParse
     # find prefs for this user, and return a promise
     @_parse.findAsync 'Pref', user: user
       .then (data) =>
-        console.log "deleting prefs for user #{user.objectId}"
+        console.log "deleting #{data.results.length} prefs for user #{user.objectId}"
         # console.log " -> results: #{@_pretty data}"
         # make a bunch of sub-promises that resolve when the row is successfully deleted
         prefRowsDeleted = []
@@ -42,7 +42,7 @@ class PeggParse
     # find peggs for this user, and return a promise
     @_parse.findAsync 'Pegg', user: user
       .then (data) =>
-        console.log "deleting peggs for user #{user.objectId}"
+        console.log "deleting #{data.results.length} peggs for user #{user.objectId}"
         # console.log " -> results: #{@_pretty data}"
         # make a bunch of sub-promises that resolve when the row is successfully deleted
         peggRowsDeleted = []
@@ -59,7 +59,7 @@ class PeggParse
     # get all the cards, and return a promise
     @getTable 'Card'
       .then (results) =>
-        console.log "clearing hasPreffed for user #{userId}"
+        console.log "clearing hasPreffed from #{results.length} cards for user #{userId}"
         # console.log " -> results: #{@_pretty results}"
         preffedRowsCleared = []
         # make a bunch of sub-promises that resolve when the row is successfully cleared
@@ -78,7 +78,7 @@ class PeggParse
     # get all the cards, and return a promise
     @getTable 'Pref'
       .then (results) =>
-        console.log "clearing hasPegged for user #{userId}"
+        console.log "clearing hasPegged from #{results.length} prefs for user #{userId}"
         # console.log " -> results: #{@_pretty results}"
         peggedRowsCleared = []
         # make a bunch of sub-promises that resolve when the row is successfully cleared
@@ -100,17 +100,17 @@ class PeggParse
 
   getRows: (type, limit, skip, res) ->
     _args = _.values(arguments).join ', '
-    console.log "getRows #{@_pretty _args}"
+    # console.log "getRows #{@_pretty _args}"
     @_parse.findManyAsync type, "?limit=#{limit}&skip=#{skip}"
       .then (data) =>
-        console.log "getRows > findManyAsync -> then"
+        # console.log "getRows > findManyAsync -> then"
         if data? and data.results? and data.results.length > 0
           # console.log " -> results: #{@_pretty data.results}"
           for item in data.results
             res.push item
           @getRows type, limit, skip + limit, res
         else
-          console.log " -> returning #{@_pretty _args}"
+          # console.log " -> returning #{@_pretty _args}"
           res
 
   updateRow: (type, id, json) ->

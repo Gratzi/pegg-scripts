@@ -25,7 +25,8 @@
     "node": ">= 0.8.0"
   },
   "scripts": {
-    "test": "grunt nodeunit"
+    "test": "grunt nodeunit",
+    "dev": "nodemon server/index.coffee & coffee -cw -o client/run/ client/*.coffee"
   },
   "dependencies": {
     "body-parser": "^1.8.3",
