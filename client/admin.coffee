@@ -1,45 +1,52 @@
-request = window.superagent
 
-class Admin
-  resetUser: (userId, cb) =>
-    request
-      .get "/users/reset/#{userId}"
-      .set('Accept', 'application/json')
-      .end (res) ->
-        res.json = (res.body)
-        console.log res.json, res.status
-        cb res if cb?
 
-window.admin = new Admin
+# listen to actions from server
+io = window.io.connect()
 
-$(document).ready ->
-  _resetUserSubmit = () =>
+io.on 'update', (message) ->
+  $('#resetUser_detail')
+    .append "#{message}<br/>"
+
+io.on 'done', (userId, results) ->
+  $('#resetUser_message')
+    .html "Success! User #{userId} is fresh like spring pheasant"
+    .parent().addClass 'has-success'
+  $('#resetUser_detail')
+    .append "done!"
+
+io.on 'error', (error) ->
+  $('#resetUser_message')
+    .html error.message
+    .parent().addClass 'has-error'
+  $('#resetUser_detail')
+    .html JSON.stringify(error)
+
+io.on 'message', (message) ->
+  console.log "server says: ", message
+
+# interact with the admin user interface
+Admin = {
+  resetUser: (userId) ->
     # reset messsage
     $('#resetUser_message')
-      .html("working ...")
+      .html "working ..."
       .parent()
-        .removeClass('has-success')
-        .removeClass('has-error')
+        .removeClass 'has-success'
+        .removeClass 'has-error'
     $('#resetUser_detail')
-      .html("")
+      .html ""
 
     # do the reset thing
-    userId = $('#resetUser_id').val()
-    window.admin.resetUser userId, (res) ->
-      if res.status is 200
-        $('#resetUser_message')
-          .html(res.json.message)
-          .parent().addClass('has-success')
-        $('#resetUser_detail')
-          .html JSON.stringify res.json.results
-      else
-        $('#resetUser_message')
-          .html(res.json?.message or res.error)
-          .parent().addClass('has-error')
-        $('#resetUser_detail')
-          .html JSON.stringify(res.json?.error or res.error)
+    io.emit "resetUser", userId
+}
+window.Admin = Admin
 
+
+# init the client app
+$(document).ready ->
   $('#resetUser').on 'submit', ->
-    _resetUserSubmit()
+    Admin.resetUser $('#resetUser_id').val()
     return false
+
+  io.emit 'ready'
 

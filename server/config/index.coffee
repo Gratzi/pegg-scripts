@@ -8,8 +8,8 @@ exports.setEnvironment = (env) ->
       exports.DEBUG_WARN = true
       exports.DEBUG_ERROR = true
       exports.DEBUG_CLIENT = true
-      exports.PARSE_APP_ID = 'zogf8qxK4ULBBRBn2EhYWwddyUczTDks9w56mNsr'
-      exports.PARSE_MASTER_KEY = '3ykoKuRAKk7zEBs4xejIfUqDmIxpOtaI5wyMH10R'
+      exports.PARSE_APP_ID = 'EXMODwSkjwgrX5wUVh8uMDSlwVTLPpUqWoA2tNIh'
+      exports.PARSE_MASTER_KEY = 'CtVGBprszckaWH54I5voPFBNuG8H4tFKYehDCql2'
 
     when "testing"
       exports.DEBUG_LOG = true

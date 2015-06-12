@@ -1,11 +1,13 @@
 fs = require 'fs'
 Promise = require 'bluebird'
 Parse = require('node-parse-api').Parse
-_ = require 'underscore'
+_ = require 'lodash'
+EventEmitter = require('events').EventEmitter
 
-class PeggParse
+class PeggParse extends EventEmitter
 
   constructor: (appId, masterKey) ->
+    super
     @_parse = Promise.promisifyAll(new Parse appId, masterKey)
 
   resetUser: (userId) ->
@@ -20,20 +22,26 @@ class PeggParse
     clearedHasPegged = @clearHasPegged userId
 
     Promise.all [deletedPrefs, deletedPeggs, clearedHasPreffed, clearedHasPegged]
+      .then (results) => @emit 'done', userId, results
+      .catch (error) => @emit 'error', error
 
   deletePrefs: (user) =>
     # find prefs for this user, and return a promise
     @_parse.findAsync 'Pref', user: user
       .then (data) =>
-        console.log "deleting #{data.results.length} prefs for user #{user.objectId}"
+        message = "deleting #{data.results.length} prefs for user #{user.objectId}"
+        console.log message
+        @emit 'update', message
         # console.log " -> results: #{@_pretty data}"
         # make a bunch of sub-promises that resolve when the row is successfully deleted
+        return Promise.resolve message: "all good"
         prefRowsDeleted = []
         for pref, i in data.results
           prefRowsDeleted[i] = @_parse.deleteAsync 'Pref', pref.objectId
             .then =>
               message = "deleted pref: #{@_pretty pref}"
               console.log message
+              @emit 'update', message
               { message, pref }
         # return a promise that resolves iff all of the rows were deleted, otherwise fails
         Promise.all prefRowsDeleted
@@ -42,15 +50,19 @@ class PeggParse
     # find peggs for this user, and return a promise
     @_parse.findAsync 'Pegg', user: user
       .then (data) =>
-        console.log "deleting #{data.results.length} peggs for user #{user.objectId}"
+        message = "deleting #{data.results.length} peggs for user #{user.objectId}"
+        console.log message
+        @emit 'update', message
         # console.log " -> results: #{@_pretty data}"
         # make a bunch of sub-promises that resolve when the row is successfully deleted
+        return Promise.resolve message: "all good"
         peggRowsDeleted = []
         for pegg, i in data.results
           peggRowsDeleted[i] = @_parse.deleteAsync 'Pegg', pegg.objectId
             .then =>
               message = "deleted pegg: #{@_pretty pegg}"
               console.log message
+              @emit 'update', message
               { message, pegg }
         # return a promise that resolves iff all of the rows were deleted, otherwise fails
         Promise.all peggRowsDeleted
@@ -59,17 +71,21 @@ class PeggParse
     # get all the cards, and return a promise
     @getTable 'Card'
       .then (results) =>
-        console.log "clearing hasPreffed from #{results.length} cards for user #{userId}"
+        message = "clearing hasPreffed from #{results.length} cards for user #{userId}"
+        console.log message
+        @emit 'update', message
         # console.log " -> results: #{@_pretty results}"
+        return Promise.resolve message: "all good"
         preffedRowsCleared = []
         # make a bunch of sub-promises that resolve when the row is successfully cleared
         for card, i in results
           if card.hasPreffed? and card.hasPreffed.indexOf(userId) > -1
             card.hasPreffed = _.uniq(card.hasPreffed).splice userId, 1
             preffedRowsCleared[i] = @_parse.updateAsync 'Card', card.objectId, card
-              .then ->
+              .then =>
                 message = "cleared hasPreffed from card: #{card.objectId}"
                 console.log message
+                @emit 'update', message
                 { message, card }
         # return a promise that resolves iff all of the rows were cleared, otherwise fails
         Promise.all preffedRowsCleared
@@ -78,17 +94,21 @@ class PeggParse
     # get all the cards, and return a promise
     @getTable 'Pref'
       .then (results) =>
-        console.log "clearing hasPegged from #{results.length} prefs for user #{userId}"
+        message = "clearing hasPegged from #{results.length} prefs for user #{userId}"
+        console.log message
+        @emit 'update', message
         # console.log " -> results: #{@_pretty results}"
+        return Promise.resolve message: "all good"
         peggedRowsCleared = []
         # make a bunch of sub-promises that resolve when the row is successfully cleared
         for card, i in results
           if card.hasPegged? and card.hasPegged.indexOf(userId) > -1
             card.hasPegged = _.uniq(card.hasPegged).splice userId, 1
             peggedRowsCleared[i] = @_parse.updateAsync 'Pref', card.objectId, card
-              .then ->
+              .then =>
                 message = "cleared hasPegged from card: #{card.objectId}"
                 console.log message
+                @emit 'update', message
                 { message, card }
         # return a promise that resolves iff all of the rows were cleared, otherwise fails
         Promise.all peggedRowsCleared
@@ -118,4 +138,5 @@ class PeggParse
 
   _pretty: (thing) ->
     JSON.stringify thing, null, 2
+
 module.exports = PeggParse
