@@ -3,31 +3,47 @@
 # listen to actions from server
 io = window.io.connect()
 
-io.on 'update', (message) ->
-  $('#resetUser_detail')
-    .append "#{message}<br/>"
+io.on 'update', (data) ->
+  $("##{data.taskName}_detail")
+    .append "#{data.message}<br/>"
 
-io.on 'done', (userId, results) ->
-  $('#resetUser_message')
-    .html "Success! User #{userId} is fresh like spring pheasant"
+io.on 'done', (data) ->
+  $("##{data.taskName}_message")
+    .html data.message
     .parent().addClass 'has-success'
-  $('#resetUser_detail')
+  $("##{data.taskName}_detail")
     .append "done!"
 
-io.on 'error', (error) ->
-  $('#resetUser_message')
-    .html error.message
+io.on 'error', (data) ->
+  $("##{data.taskName}_message")
+    .html data.error.message
     .parent().addClass 'has-error'
-  $('#resetUser_detail')
-    .html JSON.stringify(error)
+  $("##{data.taskName}_detail")
+    .html JSON.stringify(data.error)
 
-io.on 'message', (message) ->
-  console.log "server says: ", message
+io.on 'message', (data) ->
+  console.log "server says: ", data.message
+
 
 # interact with the admin user interface
 Admin = {
+  deleteCard: (cardId) ->
+    # reset messsage
+    console.log "deleting card #{cardId}"
+    $('#deleteCard_message')
+      .html "working ..."
+      .parent()
+        .removeClass 'has-success'
+        .removeClass 'has-error'
+    $('#deleteCard_detail')
+      .html ""
+
+    # do the reset thing
+    io.emit "deleteCard", cardId
+
   resetUser: (userId) ->
     # reset messsage
+    console.log "resetting user #{userId}"
     $('#resetUser_message')
       .html "working ..."
       .parent()
@@ -39,14 +55,13 @@ Admin = {
     # do the reset thing
     io.emit "resetUser", userId
 }
+
 window.Admin = Admin
 
 
 # init the client app
 $(document).ready ->
-  $('#resetUser').on 'submit', ->
-    Admin.resetUser $('#resetUser_id').val()
-    return false
-
+  $('#deleteCard').on 'submit', -> Admin.deleteCard $('#deleteCard_id').val(); false
+  $('#resetUser').on  'submit', -> Admin.resetUser  $('#resetUser_id').val(); false
   io.emit 'ready'
 

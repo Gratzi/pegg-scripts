@@ -10,26 +10,59 @@ class PeggParse extends EventEmitter
     super
     @_parse = Promise.promisifyAll(new Parse appId, masterKey)
 
+  deleteCard: (cardId) ->
+    card =
+      __type: "Pointer"
+      className:"Card"
+      objectId: cardId
+
+    Promise.all([
+      @_deleteCard card
+      @deletePrefs { card }
+      @deletePeggs { card }
+      # @deletePeggCounts { card }
+      # @deletePrefCounts { card }
+      # @deleteActivities { card }
+      # @deleteChoices { card }
+      # @deleteComments { card }
+      # @deleteFavorites { card }
+      # @deleteFrowns { card }
+    ])
+      .then (results) => @emit 'done', cardId, results
+      .catch (error) => @emit 'error', error
+
   resetUser: (userId) ->
     user =
       __type: "Pointer"
       className:"_User"
       objectId: userId
 
-    deletedPrefs = @deletePrefs user
-    deletedPeggs = @deletePeggs user
-    clearedHasPreffed = @clearHasPreffed userId
-    clearedHasPegged = @clearHasPegged userId
-
-    Promise.all [deletedPrefs, deletedPeggs, clearedHasPreffed, clearedHasPegged]
+    Promise.all([
+      @deletePrefs { user }
+      @deletePeggs { user }
+      @clearHasPreffed userId
+      @clearHasPegged userId
+    ])
       .then (results) => @emit 'done', userId, results
       .catch (error) => @emit 'error', error
 
-  deletePrefs: (user) =>
-    # find prefs for this user, and return a promise
-    @_parse.findAsync 'Pref', user: user
+  _deleteCard: (card) ->
+    message = "deleting card: #{card.objectId}"
+    @emit 'update', message
+    return Promise.resolve message: "all good"
+    # find prefs for these conditions, and return a promise
+    @_parse.deleteAsync '', card.objectId
+      .then =>
+        message = "deleted card: #{@_pretty card}"
+        console.log message
+        @emit 'update', message
+        { message, pref }
+
+  deletePrefs: (conditions) =>
+    # find prefs for these conditions, and return a promise
+    @_parse.findAsync 'Pref', conditions
       .then (data) =>
-        message = "deleting #{data.results.length} prefs for user #{user.objectId}"
+        message = "deleting #{data.results.length} prefs for #{@_pretty _.mapValues(conditions, (c) -> c.objectId)}"
         console.log message
         @emit 'update', message
         # console.log " -> results: #{@_pretty data}"
@@ -46,11 +79,11 @@ class PeggParse extends EventEmitter
         # return a promise that resolves iff all of the rows were deleted, otherwise fails
         Promise.all prefRowsDeleted
 
-  deletePeggs: (user) =>
-    # find peggs for this user, and return a promise
-    @_parse.findAsync 'Pegg', user: user
+  deletePeggs: (conditions) =>
+    # find peggs for this conditions, and return a promise
+    @_parse.findAsync 'Pegg', conditions
       .then (data) =>
-        message = "deleting #{data.results.length} peggs for user #{user.objectId}"
+        message = "deleting #{data.results.length} peggs for #{@_pretty _.mapValues conditions, (c) -> c.objectId}"
         console.log message
         @emit 'update', message
         # console.log " -> results: #{@_pretty data}"
