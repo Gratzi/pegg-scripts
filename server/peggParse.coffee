@@ -17,7 +17,7 @@ class PeggParse extends EventEmitter
       objectId: cardId
 
     Promise.all([
-      @_deleteCard card
+      @_deleteCard cardId
       @deletePrefs { card }
       @deletePeggs { card }
       # @deletePeggCounts { card }
@@ -31,11 +31,10 @@ class PeggParse extends EventEmitter
       .then (results) => @emit 'done', cardId, results
       .catch (error) => @emit 'error', error
 
-  _deleteCard: (card) ->
-    return Promise.resolve()
-    @_parse.deleteAsync '', card.objectId
+  _deleteCard: (cardId) ->
+    @_parse.deleteAsync 'Card', cardId
       .then =>
-        @emit 'update', "deleted card: #{card.objectId}"
+        @emit 'update', "deleted card: #{cardId}"
 
   resetUser: (userId) ->
     user =
@@ -57,7 +56,6 @@ class PeggParse extends EventEmitter
     @_parse.findAsync 'Pref', conditions
       .then (data) =>
         @emit 'update', "deleting #{data.results.length} prefs for #{@_pretty _.mapValues(conditions, (c) -> c.objectId)}"
-        return Promise.resolve()
         # make a bunch of sub-promises that resolve when the row is successfully deleted, and
         # return a promise that resolves iff all of the rows were deleted, otherwise fails
         Promise.all(
@@ -72,7 +70,6 @@ class PeggParse extends EventEmitter
     @_parse.findAsync 'Pegg', conditions
       .then (data) =>
         @emit 'update', "deleting #{data.results.length} peggs for #{@_pretty _.mapValues(conditions, (c) -> c.objectId)}"
-        return Promise.resolve()
         # make a bunch of sub-promises that resolve when the row is successfully deleted, and
         # return a promise that resolves iff all of the rows were deleted, otherwise fails
         Promise.all(
@@ -87,7 +84,6 @@ class PeggParse extends EventEmitter
     @getTable 'Card'
       .then (results) =>
         @emit 'update', "clearing hasPreffed from #{results.length} cards for user #{userId}"
-        return Promise.resolve()
         # make a bunch of sub-promises that resolve when the row is successfully cleared, and
         # return a promise that resolves iff all of the rows were cleared, otherwise fails
         Promise.all(
@@ -104,7 +100,6 @@ class PeggParse extends EventEmitter
     @getTable 'Pref'
       .then (results) =>
         @emit 'update', "clearing hasPegged from #{results.length} prefs for user #{userId}"
-        return Promise.resolve()
         # make a bunch of sub-promises that resolve when the row is successfully cleared, and
         # return a promise that resolves iff all of the rows were cleared, otherwise fails
         Promise.all(
