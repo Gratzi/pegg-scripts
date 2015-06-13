@@ -45,34 +45,26 @@ app.io.route 'ready', (req) ->
 app.io.route 'deleteCard', (req) ->
   taskName = 'deleteCard'
   pp = new peggParse config.PARSE_APP_ID, config.PARSE_MASTER_KEY
-
-  pp.on 'update', (message) ->
-    req.io.emit 'update', { taskName, message }
-
+  pp.on 'message', (message) ->
+    req.io.emit 'message', { taskName, message }
   pp.on 'done', (cardId, results) ->
     req.io.emit 'done', { taskName, results, message: "Success! Card #{cardId} has been obliterated. It is no more." }
-
   pp.on 'error', (error) ->
     console.log error.stack
     req.io.emit 'error', { taskName, error }
-
   console.log "delete card #{req.data}"
   pp.deleteCard req.data
 
 app.io.route 'resetUser', (req) ->
   taskName = 'resetUser'
   pp = new peggParse config.PARSE_APP_ID, config.PARSE_MASTER_KEY
-
-  pp.on 'update', (message) ->
-    req.io.emit 'update', { taskName, message }
-
+  pp.on 'message', (message) ->
+    req.io.emit 'message', { taskName, message }
   pp.on 'done', (userId, results) ->
     req.io.emit 'done', { taskName, results, message: "Success! User #{userId} is fresh like spring pheasant." }
-
   pp.on 'error', (error) ->
     console.log error.stack
     req.io.emit 'error', { taskName, error }
-
   console.log "reset user #{req.data}"
   pp.resetUser req.data
 

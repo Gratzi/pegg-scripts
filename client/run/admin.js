@@ -4,7 +4,7 @@
 
   io = window.io.connect();
 
-  io.on('update', function(data) {
+  io.on('message', function(data) {
     return $("#" + data.taskName + "_detail").append("" + data.message + "<br/>");
   });
 

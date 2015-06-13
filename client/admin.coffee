@@ -3,7 +3,7 @@
 # listen to actions from server
 io = window.io.connect()
 
-io.on 'update', (data) ->
+io.on 'message', (data) ->
   $("##{data.taskName}_detail")
     .append "#{data.message}<br/>"
 

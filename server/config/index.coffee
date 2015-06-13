@@ -16,8 +16,8 @@ exports.setEnvironment = (env) ->
       exports.DEBUG_WARN = true
       exports.DEBUG_ERROR = true
       exports.DEBUG_CLIENT = true
-      exports.PARSE_APP_ID = 'EXMODwSkjwgrX5wUVh8uMDSlwVTLPpUqWoA2tNIh'
-      exports.PARSE_MASTER_KEY = 'CtVGBprszckaWH54I5voPFBNuG8H4tFKYehDCql2'
+      exports.PARSE_APP_ID = 'XXX'
+      exports.PARSE_MASTER_KEY = 'XXX'
 
     when "production"
       exports.DEBUG_LOG = false
