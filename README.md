@@ -15,6 +15,10 @@ Start the server and compile coffee automatically.
 ```
 npm run dev
 ```
+Run the tests
+```
+npm test
+```
 
 ## TODO
 
