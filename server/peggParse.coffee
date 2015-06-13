@@ -18,15 +18,15 @@ class PeggParse extends EventEmitter
 
     Promise.all([
       @_delete 'Card', cardId
-      @_findAndDelete 'Pref', { card }
-      @_findAndDelete 'Pegg', { card }
-      @_findAndDelete 'PeggCounts', { card }
-      @_findAndDelete 'PrefCounts', { card }
-      @_findAndDelete 'Activity', { card }
-      @_findAndDelete 'Choice', { card }
-      @_findAndDelete 'Comment', { card }
-      @_findAndDelete 'Favorite', { card }
-      @_findAndDelete 'Frown', { card }
+      @_findAndDelete 'Activity', card: card
+      @_findAndDelete 'Choice', card: card
+      @_findAndDelete 'Comment', card: card
+      @_findAndDelete 'Favorite', card: card
+      @_findAndDelete 'Frown', card: card
+      @_findAndDelete 'Pegg', card: card
+      @_findAndDelete 'PeggCounts', card: card
+      @_findAndDelete 'Pref', card: card
+      @_findAndDelete 'PrefCounts', card: card
     ])
       .then (results) => @emit 'done', cardId, results
       .catch (error) => @emit 'error', error
@@ -38,8 +38,43 @@ class PeggParse extends EventEmitter
       objectId: userId
 
     Promise.all([
-      @_findAndDelete 'Pref', { user }
-      @_findAndDelete 'Pegg', { user }
+      # XXX If we want to enable (optionally) resetting user to pristine state, como
+      # recién nacido, then we'd include the following items:
+      #
+      # @_findAndDelete 'Activity', user: user
+      # @_findAndDelete 'Activity', friend: user
+      # @_findAndDelete 'Comment', author: user
+      # @_findAndDelete 'Comment', peggee: user
+      # @_findAndDelete 'Favorite', user: user
+      # @_findAndDelete 'Flag', peggee: user
+      # @_findAndDelete 'Flag', user: user
+      # @_findAndDelete 'Frown', user: user
+      # @_findAndDelete 'Pegg', user: user
+      # @_findAndDelete 'Pegg', peggee: user
+      # @_findAndDelete 'PeggCounts', user: user
+      # @_findAndDelete 'PeggerPoints', peggee: user
+      # @_findAndDelete 'PeggerPoints', pegger: user
+      # @_findAndDelete 'Pref', user: user
+      # @_findAndDelete 'PrefMatch', friendA: user
+      # @_findAndDelete 'PrefMatch', friendB: user
+      # @_findAndDelete 'SupportComment', author: user
+      # @_findAndDelete 'SupportComment', peggee: user
+      # @_findAndDelete 'UserMood', user: user
+      # @_findAndDelete 'UserSetting', user: user
+      #
+      # Also:
+      # - find all cards made by user then @deleteCard
+      # - if we wanted to be really thorough we'd collect IDs and counts for Peggs
+      #   we delete and decrement PeggCounts
+      #
+      # To totally nuke the user, also include:
+      # 
+      # @_delete 'User', userId
+      # @_findAndDelete 'Session', user: user
+      # @_findAndDelete 'UserPrivates', user: user
+      #
+      @_findAndDelete 'Pref', user: user
+      @_findAndDelete 'Pegg', user: user
       @clearHasPreffed userId
       @clearHasPegged userId
     ])

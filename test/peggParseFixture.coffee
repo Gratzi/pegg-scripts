@@ -41,14 +41,62 @@ module.exports =
 
   resetUser:
     find:
-      Pref: [
-        { objectId: 'bFowpZCxBt' }
-        { objectId: 'AzyP6t2uzl' }
-      ]
+      # Activity: [
+      #   { objectId: 'VN6Vp4GUJL' }
+      #   { objectId: 'OBm7DXGc9V' }
+      # ]
+      # Comment: [
+      #   { objectId: 'UMKZeNXF3F' }
+      #   { objectId: 'CYI3i9Kp4M' }
+      # ]
+      # Favorite: [
+      #   { objectId: 'Tp7UgIwRVl' }
+      #   { objectId: 'CAQZ8SifwW' }
+      # ]
+      # Flag: [
+      #   { objectId: '2CLncj0I2N' }
+      #   { objectId: '9KMhvoeT5X' }
+      # ]
+      # Frown: [
+      #   { objectId: '7QUHmJMEk9' }
+      #   { objectId: 'Uiasc7g48s' }
+      # ]
       Pegg: [
         { objectId: 'TcRJtKiiT8' }
         { objectId: 'vmPKPvIQCX' }
       ]
+      # PeggCounts: [
+      #   { objectId: 'Gq8zXIUOVT' }
+      #   { objectId: 'qabbGBDwWZ' }
+      # ]
+      # PeggerPoints: [
+      #   { objectId: 'Gq8zXIUOVT' }
+      #   { objectId: 'qabbGBDwWZ' }
+      # ]
+      Pref: [
+        { objectId: 'bFowpZCxBt' }
+        { objectId: 'AzyP6t2uzl' }
+      ]
+      # PrefCounts: [
+      #   { objectId: 'bvzqd0FpEI' }
+      #   { objectId: '5piSheXFE0' }
+      # ]
+      # PrefMatch: [
+      #   { objectId: 'bvzqd0FpEI' }
+      #   { objectId: '5piSheXFE0' }
+      # ]
+      # SupportComment: [
+      #   { objectId: 'bvzqd0FpEI' }
+      #   { objectId: '5piSheXFE0' }
+      # ]
+      # UserMood: [
+      #   { objectId: 'bvzqd0FpEI' }
+      #   { objectId: '5piSheXFE0' }
+      # ]
+      # UserSetting: [
+      #   { objectId: 'bvzqd0FpEI' }
+      #   { objectId: '5piSheXFE0' }
+      # ]
 
     findMany:
       Card: [
