@@ -58,10 +58,19 @@ Admin = {
 
 window.Admin = Admin
 
+# routing
+hidePages = ->
+  $(".page").hide()
 
-# init the client app
+window.onhashchange = hashChange = ->
+  console.log "showing page #{window.location.hash}"
+  hidePages()
+  $(window.location.hash).show()
+
+# init the app
 $(document).ready ->
   $('#deleteCard').on 'submit', -> Admin.deleteCard $('#deleteCard_id').val(); false
   $('#resetUser').on  'submit', -> Admin.resetUser  $('#resetUser_id').val(); false
+  if window.location.hash then hashChange()
   io.emit 'ready'
 
