@@ -75,6 +75,11 @@ class PeggParse extends EventEmitter
       #
       @_findAndDelete 'Pref', user: user
       @_findAndDelete 'Pegg', user: user
+      @_findAndDelete 'Pegg', peggee: user
+      @_findAndDelete 'Activity', user: user
+      @_findAndDelete 'Activity', friend: user
+      @_findAndDelete 'PeggerPoints', peggee: user
+      @_findAndDelete 'PeggerPoints', pegger: user
       @clearHasPreffed userId
       @clearHasPegged userId
     ])
