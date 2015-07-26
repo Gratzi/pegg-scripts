@@ -4,6 +4,8 @@ Parse = require('node-parse-api').Parse
 _ = require 'lodash'
 EventEmitter = require('events').EventEmitter
 
+PARSE_OBJECT_ID = /^[0-z]{8}$/
+
 class PeggParse extends EventEmitter
 
   constructor: (appId, masterKey) ->
@@ -11,6 +13,9 @@ class PeggParse extends EventEmitter
     @_parse = Promise.promisifyAll(new Parse appId, masterKey)
 
   deleteCard: (cardId) ->
+    unless cardId.match PARSE_OBJECT_ID
+      return @_error "Invalid card ID: #{cardId}"
+
     card =
       __type: "Pointer"
       className:"Card"
@@ -32,6 +37,9 @@ class PeggParse extends EventEmitter
       .catch (error) => @emit 'error', error
 
   resetUser: (userId) ->
+    unless userId.match PARSE_OBJECT_ID
+      return @_error "Invalid user ID: #{userId}"
+
     user =
       __type: "Pointer"
       className:"_User"
@@ -133,10 +141,12 @@ class PeggParse extends EventEmitter
           res
 
   _findAndDelete: (type, conditions) ->
+    if _.isEmpty(conditions)
+      return @_error "conditions should not be empty"
     # find items for these conditions, and return a promise
     @_parse.findAsync type, conditions
       .then (data) =>
-        # @emit 'message', "found #{data.results.length} #{type} items where #{@_pretty  _.mapValues(conditions, (c) -> c.objectId)}"
+        @emit 'message', "found #{data.results.length} #{type} items where #{@_pretty  _.mapValues(conditions, (c) -> c.objectId)}"
         # make a bunch of sub-promises that resolve when the row is successfully deleted, and
         # return a promise that resolves iff all of the rows were deleted, otherwise fails
         Promise.all(
@@ -151,5 +161,11 @@ class PeggParse extends EventEmitter
 
   _pretty: (thing) ->
     JSON.stringify thing, null, 2
+
+
+  _error: (message) ->
+    error = { message: message, stack: new Error(message).stack }
+    @emit 'error', error
+    error
 
 module.exports = PeggParse

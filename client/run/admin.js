@@ -5,21 +5,25 @@
   io = window.io.connect();
 
   io.on('message', function(data) {
-    return $("#" + data.taskName + "_detail").append(data.message + "<br/>");
+    if (data.taskName != null) {
+      return $("#" + data.taskName + "_detail").append(data.message + "<br/>");
+    } else {
+      return console.log("server says: ", data.message);
+    }
   });
 
   io.on('done', function(data) {
     $("#" + data.taskName + "_message").html(data.message).parent().addClass('has-success');
-    return $("#" + data.taskName + "_detail").append("done!");
+    return $("#" + data.taskName + "_detail").append("done!<br/>");
   });
 
   io.on('error', function(data) {
-    $("#" + data.taskName + "_message").html(data.error.message).parent().addClass('has-error');
-    return $("#" + data.taskName + "_detail").html(JSON.stringify(data.error));
-  });
-
-  io.on('message', function(data) {
-    return console.log("server says: ", data.message);
+    var fullMessage, message, ref, ref1;
+    message = (ref = data != null ? (ref1 = data.error) != null ? ref1.message : void 0 : void 0) != null ? ref : 'Unknown error occurred';
+    fullMessage = "ERROR: " + message + " (see server output for details)";
+    $("#" + data.taskName + "_message").html(message).parent().addClass('has-error');
+    $("#" + data.taskName + "_detail").append(fullMessage + "<br/>");
+    return console.warn(fullMessage);
   });
 
   Admin = {

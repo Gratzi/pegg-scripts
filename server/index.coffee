@@ -69,4 +69,4 @@ app.io.route 'resetUser', (req) ->
   pp.resetUser req.data
 
 app.listen app.port, ->
-  console.log "Listening on " + app.port + "\nPress CTRL-C to stop server."
+  console.log "Listening on http://localhost:" + app.port + "/\nPress CTRL-C to stop server."

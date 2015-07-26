@@ -1,28 +1,29 @@
-
-
 # listen to actions from server
 io = window.io.connect()
 
 io.on 'message', (data) ->
-  $("##{data.taskName}_detail")
-    .append "#{data.message}<br/>"
+  if data.taskName?
+    $("##{data.taskName}_detail")
+      .append "#{data.message}<br/>"
+  else
+    console.log "server says: ", data.message
 
 io.on 'done', (data) ->
   $("##{data.taskName}_message")
     .html data.message
     .parent().addClass 'has-success'
   $("##{data.taskName}_detail")
-    .append "done!"
+    .append "done!<br/>"
 
 io.on 'error', (data) ->
+  message = data?.error?.message ? 'Unknown error occurred'
+  fullMessage = "ERROR: #{message} (see server output for details)"
   $("##{data.taskName}_message")
-    .html data.error.message
+    .html message
     .parent().addClass 'has-error'
   $("##{data.taskName}_detail")
-    .html JSON.stringify(data.error)
-
-io.on 'message', (data) ->
-  console.log "server says: ", data.message
+    .append "#{fullMessage}<br/>"
+  console.warn fullMessage
 
 
 # interact with the admin user interface
