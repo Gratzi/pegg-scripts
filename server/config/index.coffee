@@ -10,6 +10,7 @@ exports.setEnvironment = (env) ->
       exports.DEBUG_CLIENT = true
       exports.PARSE_APP_ID = 'EXMODwSkjwgrX5wUVh8uMDSlwVTLPpUqWoA2tNIh'
       exports.PARSE_MASTER_KEY = 'CtVGBprszckaWH54I5voPFBNuG8H4tFKYehDCql2'
+      exports.FILE_PICKER_ID = 'A36NnDQaISmXZ8IOmKGEQz'
 
     when "testing"
       exports.DEBUG_LOG = true

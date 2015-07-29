@@ -55,6 +55,20 @@ Admin = {
 
     # do the reset thing
     io.emit "resetUser", userId
+
+  migrateS3: ->
+    # reset messsage
+    console.log "migrating image content to S3"
+    $('#migrateS3_message')
+      .html "working ..."
+      .parent()
+        .removeClass 'has-success'
+        .removeClass 'has-error'
+    $('#migrateS3_detail')
+      .html ""
+
+    # do the reset thing
+    io.emit "migrateS3"
 }
 
 window.Admin = Admin
@@ -72,6 +86,7 @@ window.onhashchange = hashChange = ->
 $(document).ready ->
   $('#deleteCard').on 'submit', -> Admin.deleteCard $('#deleteCard_id').val(); false
   $('#resetUser').on  'submit', -> Admin.resetUser  $('#resetUser_id').val(); false
+  $('#migrateS3').on  'submit', -> Admin.migrateS3(); false
   if window.location.hash then hashChange()
   io.emit 'ready'
 

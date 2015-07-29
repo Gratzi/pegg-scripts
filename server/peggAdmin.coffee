@@ -3,14 +3,15 @@ Promise = require 'bluebird'
 Parse = require('node-parse-api').Parse
 _ = require 'lodash'
 EventEmitter = require('events').EventEmitter
+exec = require('child_process').exec
 
 PARSE_OBJECT_ID = /^[0-z]{8}$/
 
-class PeggParse extends EventEmitter
+class PeggAdmin extends EventEmitter
 
-  constructor: (appId, masterKey) ->
+  constructor: (parseAppId, parseMasterKey, @filePickerId) ->
     super
-    @_parse = Promise.promisifyAll(new Parse appId, masterKey)
+    @_parse = Promise.promisifyAll(new Parse parseAppId, parseMasterKey)
 
   deleteCard: (cardId) ->
     unless cardId.match PARSE_OBJECT_ID
@@ -128,17 +129,19 @@ class PeggParse extends EventEmitter
 
   _getTable: (type) ->
     @emit 'message', "getting table #{type}"
-    @_getRows type, 50, 0, []
+    @_getRows type, 20, 0, []
 
-  _getRows: (type, limit, skip, res) ->
+  _getRows: (type, limit, skip, _res) ->
     @_parse.findManyAsync type, "?limit=#{limit}&skip=#{skip}"
       .then (data) =>
+        console.log "Got records #{skip} - #{skip + limit} for #{type}"
         if data?.results?.length > 0
           for item in data.results
-            res.push item
-          @_getRows type, limit, skip + limit, res
+            _res.push item
+          return _res
+#          @_getRows type, limit, skip + limit, _res
         else
-          res
+          _res
 
   _findAndDelete: (type, conditions) ->
     if _.isEmpty(conditions)
@@ -168,4 +171,46 @@ class PeggParse extends EventEmitter
     @emit 'error', error
     error
 
-module.exports = PeggParse
+  migrateImagesToS3: ->
+    @_getTable 'Choice'
+      .then (results) =>
+        for item in results when not _.isEmpty(item.image)
+          @storeImageFromUrl item.image, item.objectId, "/premium/orig/", (inkBlob, id, url) =>
+            console.log inkBlob
+            try
+#              @emit 'message', "uploaded choiceId: #{id}, url: #{url}"
+              inkBlob = JSON.parse inkBlob
+
+
+
+            catch
+              @emit 'error', message: inkBlob + ', choiceId: ' + id + ', url: ' + url
+#            updateFilename inkBlob.filename, item.id, (res) ->
+#              console.log res
+#            createThumbnail inkBlob, (res) ->
+#              console.log res
+
+  storeImageFromUrl: (url, id, path, cb) ->
+    console.log url
+    urlFilePath = url.match( /[^\/]+(#|\?|$)/ ) or 'foo'
+    filename = "#{id}_#{urlFilePath[0]}"
+    console.log "#{id}, #{filename}"
+    command = "curl -X POST -d url='#{url}' 'https://www.filepicker.io/api/store/S3?key=#{@filePickerId}&path=#{path + filename}'"
+    console.log command
+    exec command, (error, stdout, stderr) ->
+      cb stdout, url, id
+#
+#  updateFilename: (filename, id, cb) ->
+#    pp.updateRow 'Choice', filename, id, (err, data) ->
+#      if err?
+#        cb err
+#      else
+#        cb data
+#
+#  createThumbnail: (inkBlob, cb) ->
+#    url = inkBlob.url + "/convert?format=jpg&w=100&h=100"
+#    filename = "_thumb_#{inkBlob.filename}"
+#    storeImageFromUrl url, filename, "/thumbs/#{filename}", (res) ->
+#      cb res
+
+module.exports = PeggAdmin

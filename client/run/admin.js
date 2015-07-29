@@ -38,6 +38,12 @@
       $('#resetUser_message').html("working ...").parent().removeClass('has-success').removeClass('has-error');
       $('#resetUser_detail').html("");
       return io.emit("resetUser", userId);
+    },
+    migrateS3: function() {
+      console.log("migrating image content to S3");
+      $('#migrateS3_message').html("working ...").parent().removeClass('has-success').removeClass('has-error');
+      $('#migrateS3_detail').html("");
+      return io.emit("migrateS3");
     }
   };
 
@@ -60,6 +66,10 @@
     });
     $('#resetUser').on('submit', function() {
       Admin.resetUser($('#resetUser_id').val());
+      return false;
+    });
+    $('#migrateS3').on('submit', function() {
+      Admin.migrateS3();
       return false;
     });
     if (window.location.hash) {

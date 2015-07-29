@@ -1,5 +1,5 @@
 expressio = require 'express.io'
-peggParse = require './peggParse'
+peggAdmin = require './peggAdmin'
 assets = require 'connect-assets'
 bodyParser = require 'body-parser'
 
@@ -14,6 +14,7 @@ env = process.env.NODE_ENV or 'development'
 # Config module exports has `setEnvironment` function that sets app settings depending on environment.
 config = require './config'
 config.setEnvironment env
+pa = new peggAdmin config.PARSE_APP_ID, config.PARSE_MASTER_KEY, config.FILE_PICKER_ID
 
 # body-parse application/json
 app.use bodyParser.json()
@@ -30,13 +31,25 @@ app.get '/', (req, res) ->
 #   list = require './list'
 #   list.serverScripts res
 #
-# app.get '/choices', (req, res) ->
-#   pp.getTable 'Choice', (data) =>
-#     res.send data
+app.get '/choices', (req, res) ->
+   pa._getTable 'Choice', (data) =>
+     res.send data
 #
 # app.post '/choice', (req, res) ->
 #   pp.updateRow 'Choice', req.body.id, { plug: req.body.orig, plugThumb: req.body.thumb }, (data) =>
 #     res.send data
+
+app.io.route 'migrateS3', (req) ->
+  taskName = 'migrateS3'
+  pa.on 'message', (message) ->
+    req.io.emit 'message', { taskName, message }
+  pa.on 'done', (cardId, results) ->
+    req.io.emit 'done', { taskName, results, message: "Success! Images have been moved." }
+  pa.on 'error', (error) ->
+    console.log error.stack
+    req.io.emit 'error', { taskName, error }
+  console.log "migrating images to s3"
+  pa.migrateImagesToS3()
 
 app.io.route 'ready', (req) ->
   console.log 'client is ready'
@@ -44,29 +57,27 @@ app.io.route 'ready', (req) ->
 
 app.io.route 'deleteCard', (req) ->
   taskName = 'deleteCard'
-  pp = new peggParse config.PARSE_APP_ID, config.PARSE_MASTER_KEY
-  pp.on 'message', (message) ->
+  pa.on 'message', (message) ->
     req.io.emit 'message', { taskName, message }
-  pp.on 'done', (cardId, results) ->
+  pa.on 'done', (cardId, results) ->
     req.io.emit 'done', { taskName, results, message: "Success! Card #{cardId} has been obliterated. It is no more." }
-  pp.on 'error', (error) ->
+  pa.on 'error', (error) ->
     console.log error.stack
     req.io.emit 'error', { taskName, error }
   console.log "delete card #{req.data}"
-  pp.deleteCard req.data
+  pa.deleteCard req.data
 
 app.io.route 'resetUser', (req) ->
   taskName = 'resetUser'
-  pp = new peggParse config.PARSE_APP_ID, config.PARSE_MASTER_KEY
-  pp.on 'message', (message) ->
+  pa.on 'message', (message) ->
     req.io.emit 'message', { taskName, message }
-  pp.on 'done', (userId, results) ->
+  pa.on 'done', (userId, results) ->
     req.io.emit 'done', { taskName, results, message: "Success! User #{userId} is fresh like spring pheasant." }
-  pp.on 'error', (error) ->
+  pa.on 'error', (error) ->
     console.log error.stack
     req.io.emit 'error', { taskName, error }
   console.log "reset user #{req.data}"
-  pp.resetUser req.data
+  pa.resetUser req.data
 
 app.listen app.port, ->
   console.log "Listening on http://localhost:" + app.port + "/\nPress CTRL-C to stop server."
