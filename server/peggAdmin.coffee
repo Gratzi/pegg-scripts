@@ -77,7 +77,7 @@ class PeggAdmin extends EventEmitter
       #   we delete and decrement PeggCounts
       #
       # To totally nuke the user, also include:
-      # 
+      #
       # @_delete 'User', userId
       # @_findAndDelete 'Session', user: user
       # @_findAndDelete 'UserPrivates', user: user
@@ -175,30 +175,61 @@ class PeggAdmin extends EventEmitter
     @_getTable 'Choice'
       .then (results) =>
         for item in results when not _.isEmpty(item.image)
-          @storeImageFromUrl item.image, item.objectId, "/premium/orig/", (inkBlob, id, url) =>
-            console.log inkBlob
-            try
-#              @emit 'message', "uploaded choiceId: #{id}, url: #{url}"
-              inkBlob = JSON.parse inkBlob
+          urlFilePath = item.image.match( /[^\/]+(#|\?|$)/ ) or 'foo'
+          filename = "#{item.objectId}_#{urlFilePath[0]}"
+          item.original = item.image
+          # console.log "#{url}, #{id}, #{filename}"
+          @storeImageFromUrl item, filename, "/premium/big/"
+            .then (results) =>
+              bigBlob = results.blob
+              item = results.item
+              console.log "bigBlob: ", bigBlob
 
+              try
+  #              @emit 'message', "uploaded choiceId: #{id}, url: #{url}"
+                bigBlob = JSON.parse bigBlob
+              catch
+                message = bigBlob + ', choiceId: ' + item.objectId + ', url: ' + item.image
+                @emit 'error',
+                  message: message
+                  stack: new Error(message).stack
 
+              @createThumbnail item, bigBlob
+                .error (error) =>
+                  @emit 'error', error
+                .then (results) =>
+                  console.log JSON.stringify(results)
+                  try
+                    smallBlob = JSON.parse results.blob
+                    item = results.item
+                    blob =
+                      small: smallBlob.key
+                      big: bigBlob.key
+                      meta:
+                        id: item.objectId
+                        url: item.image
+                        original: item.original
+                        source: item.imageSource
+                        credit: item.imageCredit
+                      type: 'premium'
+                    console.log "blob: ", blob
+                  catch error
+                    # message = "#{error}, choiceId: #{item.objectId}, url: #{item.image}, smallBlob: #{JSON.stringify(smallBlob)}"
+                    # @emit 'error',
+                    #   message: message
+                    #   stack: new Error(message).stack
 
-            catch
-              @emit 'error', message: inkBlob + ', choiceId: ' + id + ', url: ' + url
-#            updateFilename inkBlob.filename, item.id, (res) ->
-#              console.log res
-#            createThumbnail inkBlob, (res) ->
-#              console.log res
+  #            updateFilename inkBlob.filename, item.id, (res) ->
+  #              console.log res
+  #            createThumbnail inkBlob, (res) ->
+  #              console.log res
 
-  storeImageFromUrl: (url, id, path, cb) ->
-    console.log url
-    urlFilePath = url.match( /[^\/]+(#|\?|$)/ ) or 'foo'
-    filename = "#{id}_#{urlFilePath[0]}"
-    console.log "#{id}, #{filename}"
-    command = "curl -X POST -d url='#{url}' 'https://www.filepicker.io/api/store/S3?key=#{@filePickerId}&path=#{path + filename}'"
-    console.log command
-    exec command, (error, stdout, stderr) ->
-      cb stdout, url, id
+  storeImageFromUrl: (item, filename, path) ->
+    new Promise (resolve, reject) =>
+      command = "curl -X POST -d url='#{item.image}' 'https://www.filepicker.io/api/store/S3?key=#{@filePickerId}&path=#{path + filename}'"
+      console.log "command:", command
+      exec command, (error, stdout, stderr) =>
+        resolve { item: item, blob: stdout }
 #
 #  updateFilename: (filename, id, cb) ->
 #    pp.updateRow 'Choice', filename, id, (err, data) ->
@@ -206,11 +237,11 @@ class PeggAdmin extends EventEmitter
 #        cb err
 #      else
 #        cb data
-#
-#  createThumbnail: (inkBlob, cb) ->
-#    url = inkBlob.url + "/convert?format=jpg&w=100&h=100"
-#    filename = "_thumb_#{inkBlob.filename}"
-#    storeImageFromUrl url, filename, "/thumbs/#{filename}", (res) ->
-#      cb res
+
+   createThumbnail: (item, inkBlob) ->
+     new Promise (resolve, reject) =>
+       item.image = inkBlob.url + "/convert?format=jpg&w=375&h=667"
+       filename = "#{item.objectId}_#{inkBlob.filename}"
+       resolve @storeImageFromUrl item, filename, "/premium/small/"
 
 module.exports = PeggAdmin
