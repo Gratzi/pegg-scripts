@@ -27,6 +27,12 @@
   });
 
   Admin = {
+    createCard: function(data) {
+      console.log("creating card", data);
+      $('#createCard_message').html("working ...").parent().removeClass('has-success').removeClass('has-error');
+      $('#createCard_detail').html("");
+      return io.emit("createCard", data);
+    },
     deleteCard: function(cardId) {
       console.log("deleting card " + cardId);
       $('#deleteCard_message').html("working ...").parent().removeClass('has-success').removeClass('has-error');
@@ -60,6 +66,10 @@
   };
 
   $(document).ready(function() {
+    $('#createCard_form').on('submit', function() {
+      Admin.createCard($(this).serializeObject());
+      return false;
+    });
     $('#deleteCard').on('submit', function() {
       Admin.deleteCard($('#deleteCard_id').val());
       return false;

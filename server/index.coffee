@@ -55,6 +55,18 @@ app.io.route 'ready', (req) ->
   console.log 'client is ready'
   req.io.emit 'message', message: "ya let's do it!"
 
+app.io.route 'createCard', (req) ->
+  taskName = 'createCard'
+  pa.on 'message', (message) ->
+    req.io.emit 'message', { taskName, message }
+  pa.on 'done', (cardId, results) ->
+    req.io.emit 'done', { taskName, results, message: "Success! Card has been created." }
+  pa.on 'error', (error) ->
+    console.log error.stack
+    req.io.emit 'error', { taskName, error }
+  console.log "create card #{req.data}"
+  pa.createCard req.data
+
 app.io.route 'deleteCard', (req) ->
   taskName = 'deleteCard'
   pa.on 'message', (message) ->

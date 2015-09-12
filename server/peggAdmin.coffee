@@ -5,13 +5,19 @@ _ = require 'lodash'
 EventEmitter = require('events').EventEmitter
 exec = require('child_process').exec
 
-PARSE_OBJECT_ID = /^[0-z]{8}$/
+PARSE_OBJECT_ID = /^[0-z]{8,10}$/
 
 class PeggAdmin extends EventEmitter
 
   constructor: (parseAppId, parseMasterKey, @filePickerId) ->
     super
     @_parse = Promise.promisifyAll(new Parse parseAppId, parseMasterKey)
+
+  createCard: (card) ->
+    console.log JSON.stringify card
+    @_parse.insertAsync "Card", card
+      .then (results) => @emit 'done', results
+      .catch (error) => @emit 'error', error
 
   deleteCard: (cardId) ->
     unless cardId.match PARSE_OBJECT_ID
@@ -24,13 +30,11 @@ class PeggAdmin extends EventEmitter
 
     Promise.all([
       @_delete 'Card', cardId
-      @_findAndDelete 'Activity', card: card
       @_findAndDelete 'Choice', card: card
       @_findAndDelete 'Comment', card: card
       @_findAndDelete 'Favorite', card: card
       @_findAndDelete 'Frown', card: card
       @_findAndDelete 'Pegg', card: card
-      @_findAndDelete 'PeggCounts', card: card
       @_findAndDelete 'Pref', card: card
       @_findAndDelete 'PrefCounts', card: card
     ])
@@ -85,10 +89,6 @@ class PeggAdmin extends EventEmitter
       @_findAndDelete 'Pref', user: user
       @_findAndDelete 'Pegg', user: user
       @_findAndDelete 'Pegg', peggee: user
-      @_findAndDelete 'Activity', user: user
-      @_findAndDelete 'Activity', friend: user
-      @_findAndDelete 'PeggerPoints', peggee: user
-      @_findAndDelete 'PeggerPoints', pegger: user
       @clearHasPreffed userId
       @clearHasPegged userId
     ])
@@ -119,12 +119,12 @@ class PeggAdmin extends EventEmitter
         # make a bunch of sub-promises that resolve when the row is successfully cleared, and
         # return a promise that resolves iff all of the rows were cleared, otherwise fails
         Promise.all(
-          for card in results
-            if card.hasPegged?.indexOf(userId) > -1
-              card.hasPegged = _.uniq(card.hasPegged).splice userId, 1
-              @_parse.updateAsync 'Pref', card.objectId, card
+          for pref in results
+            if pref.hasPegged?.indexOf(userId) > -1
+              pref.hasPegged = _.uniq(pref.hasPegged).splice userId, 1
+              @_parse.updateAsync 'Pref', pref.objectId, pref
                 .then =>
-                  @emit 'message', "cleared hasPegged from card: #{card.objectId}"
+                  @emit 'message', "cleared hasPegged from pref: #{pref.objectId}"
         )
 
   _getTable: (type) ->

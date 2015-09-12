@@ -69,6 +69,7 @@
                 <div class="sidebar-nav navbar-collapse">
                     <ul class="nav" id="side-menu">
                         <li>
+                            <a href="#createCard">Create Card</a>
                             <a href="#deleteCard">Delete Card</a>
                             <a href="#resetUser">Reset User</a>
                             <a href="#migrateS3">Migrate Content</a>
@@ -106,6 +107,85 @@
                                 without safegard, nor remorse. Use them wisely, and with
                                 great care, and they will serve you well.</p>
                         </div>
+                    </div>
+                    <!-- /.col-lg-12 -->
+                </div>
+            </div>
+            <div id="createCard" class="page" style="display: none;">
+                <!-- ============================================================== -->
+                <!-- CREATE CARD                                                    -->
+                <!-- ============================================================== -->
+                <div class="row">
+                    <div class="col-lg-12">
+                        <h1 class="page-header">Create Card</h1>
+                    </div>
+                    <!-- /.col-lg-12 -->
+                </div>
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">Create Card</div>
+                            <div class="panel-body">
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <form id="createCard_form" role="form">
+                                            <div class="form-group">
+                                                <label for="createCard_question">Question</label>
+                                                <input name="question" id="createCard_question" type="text" class="form-control" placeholder="Question">
+                                                <label><input name="categories[]" type="checkbox" value="Adventurous">Adventurous</label>
+                                                <label><input name="categories[]" type="checkbox" value="Annoyed">Annoyed</label>
+                                                <label><input name="categories[]" type="checkbox" value="Curious">Curious</label>
+                                                <label><input name="categories[]" type="checkbox" value="Devious">Devious</label>
+                                                <label><input name="categories[]" type="checkbox" value="Energetic">Energetic</label>
+                                                <label><input name="categories[]" type="checkbox" value="Geeky">Geeky</label>
+                                                <label><input name="categories[]" type="checkbox" value="Girly">Girly</label>
+                                                <label><input name="categories[]" type="checkbox" value="Healthy">Healthy</label>
+                                                <label><input name="categories[]" type="checkbox" value="Naughty">Naughty</label>
+                                                <label><input name="categories[]" type="checkbox" value="Nostalgic">Nostalgic</label>
+                                                <label><input name="categories[]" type="checkbox" value="Playful">Playful</label>
+                                                <label><input name="categories[]" type="checkbox" value="Studly">Studly</label>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="createCard_answer0_text">Answer 1</label>
+                                                <input name="choices[0][text]" id="createCard_answer0_text" type="text" class="form-control" placeholder="Answer Text">
+                                                <input name="choices[0][meta][url]" id="createCard_answer0_imageUrl" type="text" class="form-control" placeholder="Image Url">
+                                                <input name="choices[0][meta][source]" id="createCard_answer0_imageSource" type="text" class="form-control" placeholder="Image Source">
+                                                <input name="choices[0][meta][credit]" id="createCard_answer0_imageCredit" type="text" class="form-control" placeholder="Image Credit">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="createCard_answer1_text">Answer 2</label>
+                                                <input name="choices[1][text]" id="createCard_answer1_text" type="text" class="form-control" placeholder="Answer Text">
+                                                <input name="choices[1][meta][url]" id="createCard_answer1_imageUrl" type="text" class="form-control" placeholder="Image Url">
+                                                <input name="choices[1][meta][source]" id="createCard_answer1_imageSource" type="text" class="form-control" placeholder="Image Source">
+                                                <input name="choices[1][meta][credit]" id="createCard_answer1_imageCredit" type="text" class="form-control" placeholder="Image Credit">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="createCard_answer2_text">Answer 3</label>
+                                                <input name="choices[2][text]" id="createCard_answer2_text" type="text" class="form-control" placeholder="Answer Text">
+                                                <input name="choices[2][meta][url]" id="createCard_answer2_imageUrl" type="text" class="form-control" placeholder="Image Url">
+                                                <input name="choices[2][meta][source]" id="createCard_answer2_imageSource" type="text" class="form-control" placeholder="Image Source">
+                                                <input name="choices[2][meta][credit]" id="createCard_answer2_imageCredit" type="text" class="form-control" placeholder="Image Credit">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="createCard_answer3_text">Answer 4</label>
+                                                <input name="choices[3][text]" id="createCard_answer3_text" type="text" class="form-control" placeholder="Answer Text">
+                                                <input name="choices[3][meta][url]" id="createCard_answer3_imageUrl" type="text" class="form-control" placeholder="Image Url">
+                                                <input name="choices[3][meta][source]" id="createCard_answer3_imageSource" type="text" class="form-control" placeholder="Image Source">
+                                                <input name="choices[3][meta][credit]" id="createCard_answer3_imageCredit" type="text" class="form-control" placeholder="Image Credit">
+                                            </div>
+                                            <p>
+                                                <button id="createCard_submit" class="btn btn-default">Create Card!</button>
+                                            </p>
+                                            <div class="well resizable" id="createCard_detail"></div>
+                                        </form>
+                                    </div>
+                                    <!-- /.col-lg-12 (nested) -->
+                                </div>
+                                <!-- /.row (nested) -->
+                            </div>
+                            <!-- /.panel-body -->
+                        </div>
+                        <!-- /.panel -->
                     </div>
                     <!-- /.col-lg-12 -->
                 </div>
@@ -231,6 +311,7 @@
 
     <!-- jQuery Version 1.11.0 -->
     <script src="/js/jquery-1.11.0.js"></script>
+    <script src="/js/jquery.serialize-object.min.js"></script>
 
     <!-- Bootstrap Core JavaScript -->
     <script src="/js/bootstrap.min.js"></script>

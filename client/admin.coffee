@@ -28,6 +28,20 @@ io.on 'error', (data) ->
 
 # interact with the admin user interface
 Admin = {
+  createCard: (data) ->
+    # reset messsage
+    console.log "creating card", data
+    $('#createCard_message')
+      .html "working ..."
+      .parent()
+        .removeClass 'has-success'
+        .removeClass 'has-error'
+    $('#createCard_detail')
+      .html ""
+
+    # do the reset thing
+    io.emit "createCard", data
+
   deleteCard: (cardId) ->
     # reset messsage
     console.log "deleting card #{cardId}"
@@ -84,6 +98,7 @@ window.onhashchange = hashChange = ->
 
 # init the app
 $(document).ready ->
+  $('#createCard_form').on 'submit', -> Admin.createCard $(this).serializeObject(); false
   $('#deleteCard').on 'submit', -> Admin.deleteCard $('#deleteCard_id').val(); false
   $('#resetUser').on  'submit', -> Admin.resetUser  $('#resetUser_id').val(); false
   $('#migrateS3').on  'submit', -> Admin.migrateS3(); false

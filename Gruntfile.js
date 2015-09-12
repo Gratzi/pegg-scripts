@@ -10,7 +10,7 @@ module.exports = function (grunt) {
     coffee: {
        compile: {
           files: {
-             'server/run/config/index.js': 'server/config/index.coffee',
+             'server/run/config.js': 'server/config.coffee',
              'client/run/migrateS3.js': 'client/migrateS3.coffee',
              'client/run/admin.js': 'client/admin.coffee'
           }
