@@ -6,15 +6,15 @@
 
   io.on('message', function(data) {
     if (data.taskName != null) {
-      return $("#" + data.taskName + "_detail").append(data.message + "<br/>");
-    } else {
-      return console.log("server says: ", data.message);
+      $("#" + data.taskName + "_detail").append(data.message + "<br/>");
     }
+    return console.log("server says: ", data.message);
   });
 
   io.on('done', function(data) {
     $("#" + data.taskName + "_message").html(data.message).parent().addClass('has-success');
-    return $("#" + data.taskName + "_detail").append("done!<br/>");
+    $("#" + data.taskName + "_detail").append((data.message || 'done!') + "<br/>");
+    return console.log("done!", data);
   });
 
   io.on('error', function(data) {
@@ -28,10 +28,13 @@
 
   Admin = {
     createCard: function(data) {
-      console.log("creating card", data);
+      console.log("creating card:", data);
       $('#createCard_message').html("working ...").parent().removeClass('has-success').removeClass('has-error');
       $('#createCard_detail').html("");
-      return io.emit("createCard", data);
+      return io.emit("create", {
+        type: 'Card',
+        object: data
+      });
     },
     deleteCard: function(cardId) {
       console.log("deleting card " + cardId);

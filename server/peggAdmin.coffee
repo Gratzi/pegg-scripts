@@ -13,10 +13,15 @@ class PeggAdmin extends EventEmitter
     super
     @_parse = Promise.promisifyAll(new Parse parseAppId, parseMasterKey)
 
-  createCard: (card) ->
-    console.log JSON.stringify card
-    @_parse.insertAsync "Card", card
+  get: ({type, id}) ->
+    @_parse.findWithObjectIdAsync type, id
       .then (results) => @emit 'done', results
+      .catch (error) => @emit 'error', error
+
+  create: ({type, object}) ->
+    @_parse.insertAsync type, object
+      .then (results) =>
+        @emit 'done', results
       .catch (error) => @emit 'error', error
 
   deleteCard: (cardId) ->

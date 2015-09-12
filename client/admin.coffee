@@ -5,15 +5,15 @@ io.on 'message', (data) ->
   if data.taskName?
     $("##{data.taskName}_detail")
       .append "#{data.message}<br/>"
-  else
-    console.log "server says: ", data.message
+  console.log "server says: ", data.message
 
 io.on 'done', (data) ->
   $("##{data.taskName}_message")
     .html data.message
     .parent().addClass 'has-success'
   $("##{data.taskName}_detail")
-    .append "done!<br/>"
+    .append "#{data.message or 'done!'}<br/>"
+  console.log "done!", data
 
 io.on 'error', (data) ->
   message = data?.error?.message ? 'Unknown error occurred'
@@ -30,7 +30,7 @@ io.on 'error', (data) ->
 Admin = {
   createCard: (data) ->
     # reset messsage
-    console.log "creating card", data
+    console.log "creating card:", data
     $('#createCard_message')
       .html "working ..."
       .parent()
@@ -39,8 +39,8 @@ Admin = {
     $('#createCard_detail')
       .html ""
 
-    # do the reset thing
-    io.emit "createCard", data
+    # do the create thing
+    io.emit "create", type: 'Card', object: data
 
   deleteCard: (cardId) ->
     # reset messsage
