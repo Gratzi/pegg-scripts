@@ -101,12 +101,7 @@ class PeggAdmin extends EventEmitter
       # @_findAndDelete 'Frown', user: user
       # @_findAndDelete 'Pegg', user: user
       # @_findAndDelete 'Pegg', peggee: user
-      # @_findAndDelete 'PeggCounts', user: user
-      # @_findAndDelete 'PeggerPoints', peggee: user
-      # @_findAndDelete 'PeggerPoints', pegger: user
       # @_findAndDelete 'Pref', user: user
-      # @_findAndDelete 'PrefMatch', friendA: user
-      # @_findAndDelete 'PrefMatch', friendB: user
       # @_findAndDelete 'SupportComment', author: user
       # @_findAndDelete 'SupportComment', peggee: user
       # @_findAndDelete 'UserMood', user: user
@@ -184,7 +179,7 @@ class PeggAdmin extends EventEmitter
     if _.isEmpty(conditions)
       return @_error "conditions should not be empty"
     # find items for these conditions, and return a promise
-    @_parse.findAsync type, conditions
+    @_parse.findAsync type, where: conditions
       .then (data) =>
         @emit 'message', "found #{data.results.length} #{type} items where #{@_pretty conditions}"
         # make a bunch of sub-promises that resolve when the row is successfully deleted, and
