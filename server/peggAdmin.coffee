@@ -6,6 +6,7 @@ EventEmitter = require('events').EventEmitter
 exec = require('child_process').exec
 
 PARSE_OBJECT_ID = /^[0-z]{8,10}$/
+PARSE_MAX_RESULTS = 1000
 
 class PeggAdmin extends EventEmitter
 
@@ -23,6 +24,37 @@ class PeggAdmin extends EventEmitter
       .then (results) =>
         @emit 'done', results
       .catch (error) => @emit 'error', error
+
+  update: ({type, id, object}) ->
+    @_parse.updateAsync type, id, object
+      .then (results) =>
+        @emit 'done', results
+        @emit 'message', "updated #{type}: #{objectId}"
+      .catch (error) => @emit 'error', error
+
+  delete: ({type, id}) ->
+    @_delete type, id
+      .then (results) =>
+        @emit 'done', results
+      .catch (error) => @emit 'error', error
+
+  # list: ({type, limit}) ->
+  #   if limit? and limit > PARSE_MAX_RESULTS
+  #     @findRecursive type, PARSE_MAX_RESULTS, 0
+  #       .then (results) => @emit 'done', results
+  #       .catch (error) => @emit 'error', error
+  #   else
+  #     @_parse.findManyAsync type, limit
+  #       .then (results) => @emit 'done', results
+  #       .catch (error) => @emit 'error', error
+
+  findRecursive: (type, query) ->
+    @_parse.findAsync type, query
+      .then (data) =>
+        if data?.results?.length > 0
+          @emit 'results', data.results
+          query.skip += query.limit
+          # @findRecursive type, query
 
   deleteCard: (cardId) ->
     unless cardId.match PARSE_OBJECT_ID
@@ -134,9 +166,9 @@ class PeggAdmin extends EventEmitter
 
   _getTable: (type) ->
     @emit 'message', "getting table #{type}"
-    @_getRows type, 20, 0, []
+    @_getRows type, 20, 0
 
-  _getRows: (type, limit, skip, _res) ->
+  _getRows: (type, limit, skip, _res = []) ->
     @_parse.findManyAsync type, "?limit=#{limit}&skip=#{skip}"
       .then (data) =>
         console.log "Got records #{skip} - #{skip + limit} for #{type}"
@@ -144,7 +176,7 @@ class PeggAdmin extends EventEmitter
           for item in data.results
             _res.push item
           return _res
-#          @_getRows type, limit, skip + limit, _res
+          @_getRows type, limit, skip + limit, _res
         else
           _res
 
@@ -154,7 +186,7 @@ class PeggAdmin extends EventEmitter
     # find items for these conditions, and return a promise
     @_parse.findAsync type, conditions
       .then (data) =>
-        @emit 'message', "found #{data.results.length} #{type} items where #{@_pretty  _.mapValues(conditions, (c) -> c.objectId)}"
+        @emit 'message', "found #{data.results.length} #{type} items where #{@_pretty conditions}"
         # make a bunch of sub-promises that resolve when the row is successfully deleted, and
         # return a promise that resolves iff all of the rows were deleted, otherwise fails
         Promise.all(

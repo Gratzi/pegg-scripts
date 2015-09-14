@@ -26,18 +26,19 @@
   },
   "scripts": {
     "test": "mocha --compilers coffee:coffee-script/register -R nyan",
-    "dev": "nodemon server/index.coffee & coffee -cw -o client/run/ client/*.coffee"
+    "dev": "nodemon server/index.coffee & coffee -cw -o client/run/ client/*.coffee",
+    "migrate-watch": "coffee -cw -o server/run/ server/*.coffee & coffee -cw migrations/*.coffee"
   },
   "dependencies": {
+    "bluebird": "~2.3.6",
     "body-parser": "^1.8.3",
     "connect-assets": "^4.3.0",
     "express.io": "^1.1.13",
+    "lodash": "~3.9.3",
     "node-filepicker": "^0.1.2",
     "node-parse-api": "~0.3.5",
     "superagent": "^0.18.2",
-    "walk": "^2.3.3",
-    "bluebird": "~2.3.6",
-    "lodash": "~3.9.3"
+    "walk": "^2.3.3"
   },
   "devDependencies": {
     "browserify": "^5.11.2",
