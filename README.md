@@ -19,6 +19,13 @@ Run the tests
 ```
 npm test
 ```
+Run migrations
+```
+npm install -g migrate
+migrate up
+migrate down
+```
+
 
 ## TODO
 

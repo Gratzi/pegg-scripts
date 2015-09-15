@@ -14,28 +14,37 @@ class PeggAdmin extends EventEmitter
     super
     @_parse = Promise.promisifyAll(new Parse parseAppId, parseMasterKey)
 
-  get: ({type, id}) ->
+  get: (type, id) ->
     @_parse.findWithObjectIdAsync type, id
       .then (results) => @emit 'done', results
       .catch (error) => @emit 'error', error
 
-  create: ({type, object}) ->
+  create: (type, object) ->
     @_parse.insertAsync type, object
       .then (results) =>
         @emit 'done', results
       .catch (error) => @emit 'error', error
 
-  update: ({type, id, object}) ->
+  update: (type, id, object) ->
     @_parse.updateAsync type, id, object
       .then (results) =>
         @emit 'done', results
-        @emit 'message', "updated #{type}: #{objectId}"
+        @emit 'message', "updated #{type}: #{id}"
       .catch (error) => @emit 'error', error
 
-  delete: ({type, id}) ->
+  delete: (type, id) ->
     @_delete type, id
       .then (results) =>
         @emit 'done', results
+      .catch (error) => @emit 'error', error
+
+  updateBatchRecursive: (requests, offset) ->
+    newOffset = offset + 50 # max batch size
+    @_parse.batchAsync _.slice requests, offset, newOffset
+      .then (results) =>
+        if results?.length > 0
+          @emit 'results', results
+          @updateBatchRecursive requests, newOffset
       .catch (error) => @emit 'error', error
 
   # list: ({type, limit}) ->
@@ -54,7 +63,7 @@ class PeggAdmin extends EventEmitter
         if data?.results?.length > 0
           @emit 'results', data.results
           query.skip += query.limit
-          # @findRecursive type, query
+          @findRecursive type, query
 
   deleteCard: (cardId) ->
     unless cardId.match PARSE_OBJECT_ID
@@ -251,29 +260,17 @@ class PeggAdmin extends EventEmitter
                     #   message: message
                     #   stack: new Error(message).stack
 
-  #            updateFilename inkBlob.filename, item.id, (res) ->
-  #              console.log res
-  #            createThumbnail inkBlob, (res) ->
-  #              console.log res
-
   storeImageFromUrl: (item, filename, path) ->
     new Promise (resolve, reject) =>
       command = "curl -X POST -d url='#{item.image}' 'https://www.filepicker.io/api/store/S3?key=#{@filePickerId}&path=#{path + filename}'"
       console.log "command:", command
       exec command, (error, stdout, stderr) =>
         resolve { item: item, blob: stdout }
-#
-#  updateFilename: (filename, id, cb) ->
-#    pp.updateRow 'Choice', filename, id, (err, data) ->
-#      if err?
-#        cb err
-#      else
-#        cb data
 
-   createThumbnail: (item, inkBlob) ->
-     new Promise (resolve, reject) =>
-       item.image = inkBlob.url + "/convert?format=jpg&w=375&h=667"
-       filename = "#{item.objectId}_#{inkBlob.filename}"
-       resolve @storeImageFromUrl item, filename, "/premium/small/"
+  createThumbnail: (item, inkBlob) ->
+    new Promise (resolve, reject) =>
+      item.image = inkBlob.url + "/convert?format=jpg&w=375&h=667"
+      filename = "#{item.objectId}_#{inkBlob.filename}"
+      resolve @storeImageFromUrl item, filename, "/premium/small/"
 
 module.exports = PeggAdmin

@@ -16,19 +16,18 @@ exports.up = (next) ->
     console.log "got #{results.length} choices"
     choices = choices.concat results
 
+  db.on 'done', (results) =>
+    console.log "updated #{results.length} cards"
+
   db.findRecursive 'Choice',
-      limit: 50
+      limit: 500 # max rows you can fetch on a single query is 1000
       skip: 0
-      where:
-        version: null
     .then =>
       console.log "#{choices.length} total choices"
-      console.log "choice looks like: #{JSON.stringify _.first(choices), null, 2}"
       cards = _.groupBy choices, (choice) -> choice?.card?.objectId
       console.log "#{_.values(cards).length} total cards"
-      console.log "card looks like: #{JSON.stringify _.first(_.values cards), null, 2}"
       for own cardId, card of cards
-        cards[cardId] = _.map card, (choice) ->
+        cards[cardId].choices = _.map card, (choice) ->
           text: choice.text
           image: choice.blob or {
             big: choice.image
@@ -38,13 +37,17 @@ exports.up = (next) ->
               source: choice.imageSource
               credit: choice.imageCredit
           }
-      console.log "card looks like: #{JSON.stringify _.first(_.values cards), null, 2}"
 
-      # requests = _.map cards, (card) ->
-      #   method: 'PUT'
-      #   path: "/1/classes/Card/#{card.objectId}"
-      #   body:
-      #     choices: 'XXXXXXX'
+      requests = []
+      for own cardId, card of cards
+        requests.push
+           method: 'PUT'
+           path: "/1/classes/Card/#{cardId}"
+           body:
+             choices: card.choices
+
+      db.updateBatchRecursive requests, 0
+
     .then next
 
 exports.down = (next) ->
