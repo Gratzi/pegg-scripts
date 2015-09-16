@@ -37,30 +37,29 @@
       skip: 0
     }).then((function(_this) {
       return function() {
-        var card, cardId, cards, requests;
+        var card, cardId, cards, choice, i, len, ref, requests;
         console.log(choices.length + " total choices");
-        cards = _.groupBy(choices, function(choice) {
-          var ref;
-          return choice != null ? (ref = choice.card) != null ? ref.objectId : void 0 : void 0;
-        });
         console.log((_.values(cards).length) + " total cards");
-        for (cardId in cards) {
-          if (!hasProp.call(cards, cardId)) continue;
-          card = cards[cardId];
-          cards[cardId].choices = _.map(card, function(choice) {
-            return {
-              text: choice.text,
-              image: choice.blob || {
-                big: choice.image,
-                small: choice.image,
-                meta: {
-                  url: choice.image,
-                  source: choice.imageSource,
-                  credit: choice.imageCredit
-                }
+        cards = {};
+        for (i = 0, len = choices.length; i < len; i++) {
+          choice = choices[i];
+          cardId = choice != null ? (ref = choice.card) != null ? ref.objectId : void 0 : void 0;
+          if (cards[cardId] == null) {
+            cards[cardId] = {};
+            cards[cardId].choices = {};
+          }
+          cards[cardId].choices[choice.objectId] = {
+            text: choice.text,
+            image: choice.blob || {
+              big: choice.image,
+              small: choice.image,
+              meta: {
+                url: choice.image,
+                source: choice.imageSource,
+                credit: choice.imageCredit
               }
-            };
-          });
+            }
+          };
         }
         requests = [];
         for (cardId in cards) {

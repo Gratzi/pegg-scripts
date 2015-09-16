@@ -24,10 +24,14 @@ exports.up = (next) ->
       skip: 0
     .then =>
       console.log "#{choices.length} total choices"
-      cards = _.groupBy choices, (choice) -> choice?.card?.objectId
       console.log "#{_.values(cards).length} total cards"
-      for own cardId, card of cards
-        cards[cardId].choices = _.map card, (choice) ->
+      cards = {}
+      for choice in choices
+        cardId = choice?.card?.objectId
+        if !cards[cardId]?
+          cards[cardId] = {}
+          cards[cardId].choices = {}
+        cards[cardId].choices[choice.objectId] =
           text: choice.text
           image: choice.blob or {
             big: choice.image
@@ -45,7 +49,7 @@ exports.up = (next) ->
            path: "/1/classes/Card/#{cardId}"
            body:
              choices: card.choices
-
+#      console.log JSON.stringify requests, null, 2
       db.updateBatchRecursive requests, 0
 
     .then next
