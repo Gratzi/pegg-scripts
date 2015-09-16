@@ -1,107 +1,131 @@
-# listen to actions from server
-io = window.io.connect()
+log = -> console.log arguments...
 
-io.on 'message', (data) ->
-  if data.taskName?
-    $("##{data.taskName}_detail")
-      .append "#{data.message}<br/>"
-  console.log "server says: ", data.message
+class Client
+  constructor: (@server) ->
+    $('#createCard_form').on 'submit', @createCard
+    $('#deleteCard').on      'submit', @deleteCard
+    $('#resetUser').on       'submit', @resetUser
+    $('#migrateS3').on       'submit', @migrateS3
+    @server.io.on 'message', @onMessage
+    @server.io.on 'done',    @onDone
+    @server.io.on 'error',   @onError
 
-io.on 'done', (data) ->
-  $("##{data.taskName}_message")
-    .html data.message
-    .parent().addClass 'has-success'
-  $("##{data.taskName}_detail")
-    .append "#{data.message or 'done!'}<br/>"
-  console.log "done!", data
+  createCard: (e) =>
+    data = $(e.currentTarget).serializeObject()
+    log "creating card:", data
+    @reset 'createCard'
+    try
+      @server.createCard data
+    catch err
+      @error 'createCard', err.message
+    e.preventDefault()
 
-io.on 'error', (data) ->
-  message = data?.error?.message ? 'Unknown error occurred'
-  fullMessage = "ERROR: #{message} (see server output for details)"
-  $("##{data.taskName}_message")
-    .html message
-    .parent().addClass 'has-error'
-  $("##{data.taskName}_detail")
-    .append "#{fullMessage}<br/>"
-  console.warn fullMessage
+  deleteCard: (e) =>
+    cardId = $('#deleteCard_id').val()
+    log "deleting card #{cardId}"
+    @reset 'deleteCard'
+    try
+      @server.deleteCard cardId
+    catch err
+      @error 'deleteCard', err.message
+    e.preventDefault()
 
+  resetUser: (e) =>
+    userId = $('#resetUser_id').val()
+    log "resetting user #{userId}"
+    @reset 'resetUser'
+    try
+      @server.resetUser userId
+    catch err
+      @error 'resetUser', err.message
+    e.preventDefault()
 
-# interact with the admin user interface
-Admin = {
-  createCard: (data) ->
-    # reset messsage
-    console.log "creating card:", data
-    $('#createCard_message')
+  migrateS3: (e) =>
+    log "migrating image content to S3"
+    @reset 'migrateS3'
+    try
+      @server.migrateS3()
+    catch err
+      @error 'migrateS3', err.message
+    e.preventDefault()
+
+  onMessage: (data) =>
+    log "server: ", data.message
+
+  onDone: (data) =>
+    $("##{data.task}_message")
+      .html data.message
+      .parent().addClass 'has-success'
+    log "#{data.task} done!", data
+
+  onError: (data) =>
+    message = data?.error?.message ? 'Unknown error occurred'
+    fullMessage = "ERROR: #{message} (see server output for details)"
+    @error data.task, fullMessage
+
+  error: (task, message) ->
+    log message
+    $("##{task}_message")
+      .html message
+      .parent()
+        .addClass 'has-error'
+        .removeClass 'has-success'
+
+  reset: (task) ->
+    $("##{task}_message")
       .html "working ..."
       .parent()
         .removeClass 'has-success'
         .removeClass 'has-error'
-    $('#createCard_detail')
-      .html ""
+
+class ServerActions
+  constructor: ->
+    # listen to actions from server
+    @io = window.io.connect()
+    @io.emit 'ready'
+
+  createCard: (data) ->
+    # validate it and clean it up
+    for choice, i in data.choices
+      if _.isEmpty(choice.text) and _.isEmpty(choice.image.meta.url)
+        data.choices[i] = undefined
+      else
+        choice.image.small = choice.image.meta.url
+        choice.image.big = choice.image.meta.url
+
+    if _.isEmpty(data.question)
+      throw new Error 'Please enter a question'
+
+    data.choices = _.compact data.choices
+    if data.choices.length < 2
+      throw new Error 'Please enter 2+ choices'
 
     # do the create thing
-    io.emit "create", type: 'Card', object: data
+    @io.emit "create", type: 'Card', object: data
 
   deleteCard: (cardId) ->
-    # reset messsage
-    console.log "deleting card #{cardId}"
-    $('#deleteCard_message')
-      .html "working ..."
-      .parent()
-        .removeClass 'has-success'
-        .removeClass 'has-error'
-    $('#deleteCard_detail')
-      .html ""
-
-    # do the reset thing
-    io.emit "deleteCard", cardId
+    @io.emit 'deleteCard', cardId
 
   resetUser: (userId) ->
-    # reset messsage
-    console.log "resetting user #{userId}"
-    $('#resetUser_message')
-      .html "working ..."
-      .parent()
-        .removeClass 'has-success'
-        .removeClass 'has-error'
-    $('#resetUser_detail')
-      .html ""
-
-    # do the reset thing
-    io.emit "resetUser", userId
+    @io.emit 'resetUser', userId
 
   migrateS3: ->
-    # reset messsage
-    console.log "migrating image content to S3"
-    $('#migrateS3_message')
-      .html "working ..."
-      .parent()
-        .removeClass 'has-success'
-        .removeClass 'has-error'
-    $('#migrateS3_detail')
-      .html ""
+    @io.emit 'migrateS3'
 
-    # do the reset thing
-    io.emit "migrateS3"
-}
+class App
+  constructor: ->
+    @server = new ServerActions
+    @client = new Client @server
+    @initRouting()
 
-window.Admin = Admin
+  initRouting: ->
+    window.onhashchange = @hashChange
+    if window.location.hash then @hashChange()
 
-# routing
-hidePages = ->
-  $(".page").hide()
-
-window.onhashchange = hashChange = ->
-  console.log "showing page #{window.location.hash}"
-  hidePages()
-  $(window.location.hash).show()
+  hashChange: ->
+    log "showing page #{window.location.hash}"
+    $(".page").hide()
+    $(window.location.hash).show()
 
 # init the app
-$(document).ready ->
-  $('#createCard_form').on 'submit', -> Admin.createCard $(this).serializeObject(); false
-  $('#deleteCard').on 'submit', -> Admin.deleteCard $('#deleteCard_id').val(); false
-  $('#resetUser').on  'submit', -> Admin.resetUser  $('#resetUser_id').val(); false
-  $('#migrateS3').on  'submit', -> Admin.migrateS3(); false
-  if window.location.hash then hashChange()
-  io.emit 'ready'
-
+$(document).ready -> window.App = new App()
