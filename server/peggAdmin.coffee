@@ -14,25 +14,25 @@ class PeggAdmin extends EventEmitter
     super
     @_parse = Promise.promisifyAll(new Parse parseAppId, parseMasterKey)
 
-  get: (type, id) ->
+  get: ({type, id}) ->
     @_parse.findWithObjectIdAsync type, id
       .then (results) => @emit 'done', results
       .catch (error) => @emit 'error', error
 
-  create: (type, object) ->
+  create: ({type, object}) ->
     @_parse.insertAsync type, object
       .then (results) =>
         @emit 'done', results
       .catch (error) => @emit 'error', error
 
-  update: (type, id, object) ->
+  update: ({type, id, object}) ->
     @_parse.updateAsync type, id, object
       .then (results) =>
         @emit 'done', results
         @emit 'message', "updated #{type}: #{id}"
       .catch (error) => @emit 'error', error
 
-  delete: (type, id) ->
+  delete: ({type, id}) ->
     @_delete type, id
       .then (results) =>
         @emit 'done', results
