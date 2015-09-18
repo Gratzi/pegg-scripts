@@ -87,11 +87,11 @@ class ServerActions
   createCard: (data) ->
     # validate it and clean it up
     for choice, i in data.choices
-      if _.isEmpty(choice.text) and _.isEmpty(choice.image.meta.url)
+      if _.isEmpty(choice.text) and _.isEmpty(choice.blob.meta.url)
         data.choices[i] = undefined
       else
-        choice.image.small = choice.image.meta.url
-        choice.image.big = choice.image.meta.url
+        choice.blob.small = choice.blob.meta.url
+        choice.blob.big = choice.blob.meta.url
 
     if _.isEmpty(data.question)
       throw new Error 'Please enter a question'
@@ -101,16 +101,16 @@ class ServerActions
       throw new Error 'Please enter 2+ choices'
 
     # do the create thing
-    @io.emit "create", type: 'Card', object: data, task: 'createCard'
+    @io.emit 'createCard', object: data, task: 'createCard'
 
   deleteCard: (cardId) ->
-    @io.emit 'deleteCard', cardId
+    @io.emit 'deleteCard', cardId: cardId, task: 'deleteCard'
 
   resetUser: (userId) ->
-    @io.emit 'resetUser', userId
+    @io.emit 'resetUser', userId: userId, task: 'resetUser'
 
   migrateS3: ->
-    @io.emit 'migrateS3'
+    @io.emit 'migrateS3', task: 'migrateS3'
 
 class App
   constructor: ->

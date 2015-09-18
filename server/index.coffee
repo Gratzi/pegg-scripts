@@ -38,12 +38,11 @@ for key in Object.getOwnPropertyNames peggAdmin.prototype
         data = req.data
         pa = new peggAdmin config.PARSE_APP_ID, config.PARSE_MASTER_KEY, config.FILE_PICKER_ID
         pa.on 'message', (message) -> req.io.emit 'message', { data, message }
-        pa.on 'done', (results) -> req.io.emit 'done', { data, results }
-        pa.on 'error', (error) ->
-          console.log "ERROR: #{error.stack or JSON.stringify error}"
-          req.io.emit 'error', { data, error }
-        console.log "#{key} #{JSON.stringify data}"
         pa[key] data
+          .then (results) -> req.io.emit 'done', { data, results }
+          .catch (error) ->
+            console.log "ERROR: #{error.stack or JSON.stringify error}"
+            req.io.emit 'error', { data, error }
 
 app.listen app.port, ->
   console.log "Listening on http://localhost:" + app.port + "/\nPress CTRL-C to stop server."

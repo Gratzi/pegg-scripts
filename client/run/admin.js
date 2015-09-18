@@ -121,11 +121,11 @@
       ref = data.choices;
       for (i = j = 0, len = ref.length; j < len; i = ++j) {
         choice = ref[i];
-        if (_.isEmpty(choice.text) && _.isEmpty(choice.image.meta.url)) {
+        if (_.isEmpty(choice.text) && _.isEmpty(choice.blob.meta.url)) {
           data.choices[i] = void 0;
         } else {
-          choice.image.small = choice.image.meta.url;
-          choice.image.big = choice.image.meta.url;
+          choice.blob.small = choice.blob.meta.url;
+          choice.blob.big = choice.blob.meta.url;
         }
       }
       if (_.isEmpty(data.question)) {
@@ -135,23 +135,30 @@
       if (data.choices.length < 2) {
         throw new Error('Please enter 2+ choices');
       }
-      return this.io.emit("create", {
-        type: 'Card',
+      return this.io.emit('createCard', {
         object: data,
         task: 'createCard'
       });
     };
 
     ServerActions.prototype.deleteCard = function(cardId) {
-      return this.io.emit('deleteCard', cardId);
+      return this.io.emit('deleteCard', {
+        cardId: cardId,
+        task: 'deleteCard'
+      });
     };
 
     ServerActions.prototype.resetUser = function(userId) {
-      return this.io.emit('resetUser', userId);
+      return this.io.emit('resetUser', {
+        userId: userId,
+        task: 'resetUser'
+      });
     };
 
     ServerActions.prototype.migrateS3 = function() {
-      return this.io.emit('migrateS3');
+      return this.io.emit('migrateS3', {
+        task: 'migrateS3'
+      });
     };
 
     return ServerActions;

@@ -16,28 +16,31 @@ class PeggAdmin extends EventEmitter
 
   get: ({type, id}) ->
     @_parse.findWithObjectIdAsync type, id
-      .then (results) => @emit 'done', results
+      .then (results) =>
+        @emit 'done', results
+        results
       .catch (error) => @emit 'error', error
 
   create: ({type, object}) ->
     @emit 'message', "creating #{type}"
     @_parse.insertAsync type, object
-      .then (results) =>
-        @emit 'done', results
-      .catch (error) => @emit 'error', error
 
   update: ({type, id, object}) ->
     @_parse.updateAsync type, id, object
-      .then (results) =>
-        @emit 'done', results
-        @emit 'message', "updated #{type}: #{id}"
-      .catch (error) => @emit 'error', error
 
   delete: ({type, id}) ->
     @_delete type, id
+
+  createCard: ({object}) ->
+    card = object
+    choices = card.choices
+    card.choices = undefined
+    @create type: 'Card', object: card
       .then (results) =>
-        @emit 'done', results
-      .catch (error) => @emit 'error', error
+        cardId = results.objectId
+        for choice in choices then do (choice) =>
+          choice.card = @_pointer 'Card', cardId
+          @create type: 'Choice', object: choice
 
   updateBatchRecursive: (requests, offset) ->
     newOffset = offset + 50 # max batch size
@@ -46,7 +49,6 @@ class PeggAdmin extends EventEmitter
         if results?.length > 0
           @emit 'results', results
           @updateBatchRecursive requests, newOffset
-      .catch (error) => @emit 'error', error
 
   # list: ({type, limit}) ->
   #   if limit? and limit > PARSE_MAX_RESULTS
@@ -66,14 +68,11 @@ class PeggAdmin extends EventEmitter
           query.skip += query.limit
           @findRecursive type, query
 
-  deleteCard: (cardId) ->
+  deleteCard: ({cardId}) ->
     unless cardId.match PARSE_OBJECT_ID
       return @_error "Invalid card ID: #{cardId}"
 
-    card =
-      __type: "Pointer"
-      className:"Card"
-      objectId: cardId
+    card = @_pointer 'Card', cardId
 
     Promise.all([
       @_delete 'Card', cardId
@@ -88,14 +87,11 @@ class PeggAdmin extends EventEmitter
       .then (results) => @emit 'done', cardId, results
       .catch (error) => @emit 'error', error
 
-  resetUser: (userId) ->
+  resetUser: ({userId}) ->
     unless userId.match PARSE_OBJECT_ID
       return @_error "Invalid user ID: #{userId}"
 
-    user =
-      __type: "Pointer"
-      className:"_User"
-      objectId: userId
+    user = @_pointer '_User', userId
 
     Promise.all([
       # XXX If we want to enable (optionally) resetting user to pristine state, como
@@ -131,13 +127,13 @@ class PeggAdmin extends EventEmitter
       @_findAndDelete 'Pref', user: user
       @_findAndDelete 'Pegg', user: user
       @_findAndDelete 'Pegg', peggee: user
-      @clearHasPreffed userId
-      @clearHasPegged userId
+      @clearHasPreffed {userId}
+      @clearHasPegged {userId}
     ])
       .then (results) => @emit 'done', userId, results
       .catch (error) => @emit 'error', error
 
-  clearHasPreffed: (userId) =>
+  clearHasPreffed: ({userId}) =>
     # get all the cards, and return a promise
     @_getTable 'Card'
       .then (results) =>
@@ -153,7 +149,7 @@ class PeggAdmin extends EventEmitter
                   @emit 'message', "cleared hasPreffed from card: #{card.objectId}"
         )
 
-  clearHasPegged: (userId) =>
+  clearHasPegged: ({userId}) =>
     # get all the cards, and return a promise
     @_getTable 'Pref'
       .then (results) =>
@@ -168,6 +164,67 @@ class PeggAdmin extends EventEmitter
                 .then =>
                   @emit 'message', "cleared hasPegged from pref: #{pref.objectId}"
         )
+
+  migrateImagesToS3: ->
+    @_getTable 'Choice'
+      .then (results) =>
+        for item in results when not _.isEmpty(item.image)
+          urlFilePath = item.image.match( /[^\/]+(#|\?|$)/ ) or 'foo'
+          filename = "#{item.objectId}_#{urlFilePath[0]}"
+          item.original = item.image
+          # console.log "#{url}, #{id}, #{filename}"
+          @_storeImageFromUrl item, filename, "/premium/big/"
+            .then (results) =>
+              bigBlob = results.blob
+              item = results.item
+              console.log "bigBlob: ", bigBlob
+
+              try
+  #              @emit 'message', "uploaded choiceId: #{id}, url: #{url}"
+                bigBlob = JSON.parse bigBlob
+              catch
+                message = bigBlob + ', choiceId: ' + item.objectId + ', url: ' + item.image
+                @emit 'error',
+                  message: message
+                  stack: new Error(message).stack
+
+              @_createThumbnail item, bigBlob
+                .error (error) =>
+                  @emit 'error', error
+                .then (results) =>
+                  console.log JSON.stringify(results)
+                  try
+                    smallBlob = JSON.parse results.blob
+                    item = results.item
+                    blob =
+                      small: smallBlob.key
+                      big: bigBlob.key
+                      meta:
+                        id: item.objectId
+                        url: item.image
+                        original: item.original
+                        source: item.imageSource
+                        credit: item.imageCredit
+                      type: 'premium'
+                    console.log "blob: ", blob
+                  catch error
+                    # message = "#{error}, choiceId: #{item.objectId}, url: #{item.image}, smallBlob: #{JSON.stringify(smallBlob)}"
+                    # @emit 'error',
+                    #   message: message
+                    #   stack: new Error(message).stack
+
+  _storeImageFromUrl: (item, filename, path) ->
+    new Promise (resolve, reject) =>
+      command = "curl -X POST -d url='#{item.image}' 'https://www.filepicker.io/api/store/S3?key=#{@filePickerId}&path=#{path + filename}'"
+      console.log "command:", command
+      exec command, (error, stdout, stderr) =>
+        resolve { item: item, blob: stdout }
+
+  _createThumbnail: (item, inkBlob) ->
+    new Promise (resolve, reject) =>
+      item.image = inkBlob.url + "/convert?format=jpg&w=375&h=667"
+      filename = "#{item.objectId}_#{inkBlob.filename}"
+      resolve @_storeImageFromUrl item, filename, "/premium/small/"
 
   _getTable: (type) ->
     @emit 'message', "getting table #{type}"
@@ -213,65 +270,11 @@ class PeggAdmin extends EventEmitter
     @emit 'error', error
     error
 
-  migrateImagesToS3: ->
-    @_getTable 'Choice'
-      .then (results) =>
-        for item in results when not _.isEmpty(item.image)
-          urlFilePath = item.image.match( /[^\/]+(#|\?|$)/ ) or 'foo'
-          filename = "#{item.objectId}_#{urlFilePath[0]}"
-          item.original = item.image
-          # console.log "#{url}, #{id}, #{filename}"
-          @storeImageFromUrl item, filename, "/premium/big/"
-            .then (results) =>
-              bigBlob = results.blob
-              item = results.item
-              console.log "bigBlob: ", bigBlob
-
-              try
-  #              @emit 'message', "uploaded choiceId: #{id}, url: #{url}"
-                bigBlob = JSON.parse bigBlob
-              catch
-                message = bigBlob + ', choiceId: ' + item.objectId + ', url: ' + item.image
-                @emit 'error',
-                  message: message
-                  stack: new Error(message).stack
-
-              @createThumbnail item, bigBlob
-                .error (error) =>
-                  @emit 'error', error
-                .then (results) =>
-                  console.log JSON.stringify(results)
-                  try
-                    smallBlob = JSON.parse results.blob
-                    item = results.item
-                    blob =
-                      small: smallBlob.key
-                      big: bigBlob.key
-                      meta:
-                        id: item.objectId
-                        url: item.image
-                        original: item.original
-                        source: item.imageSource
-                        credit: item.imageCredit
-                      type: 'premium'
-                    console.log "blob: ", blob
-                  catch error
-                    # message = "#{error}, choiceId: #{item.objectId}, url: #{item.image}, smallBlob: #{JSON.stringify(smallBlob)}"
-                    # @emit 'error',
-                    #   message: message
-                    #   stack: new Error(message).stack
-
-  storeImageFromUrl: (item, filename, path) ->
-    new Promise (resolve, reject) =>
-      command = "curl -X POST -d url='#{item.image}' 'https://www.filepicker.io/api/store/S3?key=#{@filePickerId}&path=#{path + filename}'"
-      console.log "command:", command
-      exec command, (error, stdout, stderr) =>
-        resolve { item: item, blob: stdout }
-
-  createThumbnail: (item, inkBlob) ->
-    new Promise (resolve, reject) =>
-      item.image = inkBlob.url + "/convert?format=jpg&w=375&h=667"
-      filename = "#{item.objectId}_#{inkBlob.filename}"
-      resolve @storeImageFromUrl item, filename, "/premium/small/"
+  _pointer: (type, id) ->
+    throw new Error "pointer type required" unless type?
+    throw new Error "pointer object ID required" unless id?
+    __type: "Pointer"
+    className: type
+    objectId: id
 
 module.exports = PeggAdmin
