@@ -86,15 +86,15 @@
     };
 
     Client.prototype.onDone = function(data) {
-      $("#" + data.task + "_message").html(data.message).parent().addClass('has-success');
-      return log(data.task + " done!", data);
+      $("#" + data.data.task + "_message").html(data.message).parent().addClass('has-success');
+      return log(data.data.task + " done!", data.data);
     };
 
     Client.prototype.onError = function(data) {
-      var fullMessage, message, ref, ref1;
-      message = (ref = data != null ? (ref1 = data.error) != null ? ref1.message : void 0 : void 0) != null ? ref : 'Unknown error occurred';
+      var fullMessage, message, ref, ref1, ref2;
+      message = (ref = (data != null ? (ref1 = data.error) != null ? ref1.message : void 0 : void 0) || (data != null ? (ref2 = data.error) != null ? ref2.error : void 0 : void 0)) != null ? ref : 'Unknown error occurred';
       fullMessage = "ERROR: " + message + " (see server output for details)";
-      return this.error(data.task, fullMessage);
+      return this.error(data.data.task, fullMessage);
     };
 
     Client.prototype.error = function(task, message) {
@@ -137,7 +137,8 @@
       }
       return this.io.emit("create", {
         type: 'Card',
-        object: data
+        object: data,
+        task: 'createCard'
       });
     };
 

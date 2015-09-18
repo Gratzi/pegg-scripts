@@ -20,6 +20,7 @@ class PeggAdmin extends EventEmitter
       .catch (error) => @emit 'error', error
 
   create: ({type, object}) ->
+    @emit 'message', "creating #{type}"
     @_parse.insertAsync type, object
       .then (results) =>
         @emit 'done', results

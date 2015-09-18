@@ -26,120 +26,24 @@ app.use expressio.static process.cwd() + '/client'
 app.get '/', (req, res) ->
   res.render 'index'
 
-# app.get '/choices', (req, res) ->
-#   pa._getTable 'Choice'
-#     .then (data) =>
-#       res.json data
-
-
 app.io.route 'ready', (req) ->
   console.log 'client is ready'
   req.io.emit 'message', message: "ya let's do it!"
 
-app.io.route 'list', (req) ->
-  pa = new peggAdmin config.PARSE_APP_ID, config.PARSE_MASTER_KEY, config.FILE_PICKER_ID
-  type = req.data.type
-  task = "get#{type}"
-  pa.on 'message', (message) ->
-    req.io.emit 'message', { task, message }
-  pa.on 'done', (results) ->
-    req.io.emit 'done', { task, results, message: "Success! #{req.data.type} listing complete" }
-  pa.on 'error', (error) ->
-    console.log error.stack
-    req.io.emit 'error', { task, error }
-  console.log "get #{JSON.stringify req.data}"
-  pa._getTable type
-
-app.io.route 'get', (req) ->
-  pa = new peggAdmin config.PARSE_APP_ID, config.PARSE_MASTER_KEY, config.FILE_PICKER_ID
-  task = "get#{req.data.type}"
-  pa.on 'message', (message) ->
-    req.io.emit 'message', { task, message }
-  pa.on 'done', (results) ->
-    req.io.emit 'done', { task, results, message: "Success! #{req.data.type} retrieved: #{results.objectId}" }
-  pa.on 'error', (error) ->
-    console.log error.stack
-    req.io.emit 'error', { task, error }
-  console.log "get #{JSON.stringify req.data}"
-  pa.get req.data
-
-app.io.route 'create', (req) ->
-  pa = new peggAdmin config.PARSE_APP_ID, config.PARSE_MASTER_KEY, config.FILE_PICKER_ID
-  task = "create#{req.data.type}"
-  pa.on 'message', (message) ->
-    req.io.emit 'message', { task, message }
-  pa.on 'done', (results) ->
-    req.io.emit 'done', { task, results, message: "Success! #{req.data.type} created: #{results.objectId}" }
-  pa.on 'error', (error) ->
-    console.log error.stack
-    req.io.emit 'error', { task, error }
-  console.log "create #{JSON.stringify req.data}"
-  pa.create req.data
-
-app.io.route 'update', (req) ->
-  pa = new peggAdmin config.PARSE_APP_ID, config.PARSE_MASTER_KEY, config.FILE_PICKER_ID
-  task = "update#{req.data.type}"
-  pa.on 'message', (message) ->
-    req.io.emit 'message', { task, message }
-  pa.on 'done', (results) ->
-    req.io.emit 'done', { task, results, message: "Success! #{req.data.type} updated: #{results.objectId}" }
-  pa.on 'error', (error) ->
-    console.log error.stack
-    req.io.emit 'error', { task, error }
-  console.log "update #{JSON.stringify req.data}"
-  pa.update req.data
-
-app.io.route 'delete', (req) ->
-  pa = new peggAdmin config.PARSE_APP_ID, config.PARSE_MASTER_KEY, config.FILE_PICKER_ID
-  task = "delete#{req.data.type}"
-  pa.on 'message', (message) ->
-    req.io.emit 'message', { task, message }
-  pa.on 'done', (results) ->
-    req.io.emit 'done', { task, results, message: "Success! #{req.data.type} deleted: #{results.objectId}" }
-  pa.on 'error', (error) ->
-    console.log error.stack
-    req.io.emit 'error', { task, error }
-  console.log "delete #{JSON.stringify req.data}"
-  pa.delete req.data
-
-app.io.route 'deleteCard', (req) ->
-  pa = new peggAdmin config.PARSE_APP_ID, config.PARSE_MASTER_KEY, config.FILE_PICKER_ID
-  task = 'deleteCard'
-  pa.on 'message', (message) ->
-    req.io.emit 'message', { task, message }
-  pa.on 'done', (cardId, results) ->
-    req.io.emit 'done', { task, results, message: "Success! Card #{cardId} has been obliterated. It is no more." }
-  pa.on 'error', (error) ->
-    console.log error.stack
-    req.io.emit 'error', { task, error }
-  console.log "delete card #{req.data}"
-  pa.deleteCard req.data
-
-app.io.route 'resetUser', (req) ->
-  pa = new peggAdmin config.PARSE_APP_ID, config.PARSE_MASTER_KEY, config.FILE_PICKER_ID
-  task = 'resetUser'
-  pa.on 'message', (message) ->
-    req.io.emit 'message', { task, message }
-  pa.on 'done', (userId, results) ->
-    req.io.emit 'done', { task, results, message: "Success! User #{userId} is fresh like spring pheasant." }
-  pa.on 'error', (error) ->
-    console.log error.stack
-    req.io.emit 'error', { task, error }
-  console.log "reset user #{req.data}"
-  pa.resetUser req.data
-
-app.io.route 'migrateS3', (req) ->
-  pa = new peggAdmin config.PARSE_APP_ID, config.PARSE_MASTER_KEY, config.FILE_PICKER_ID
-  task = 'migrateS3'
-  pa.on 'message', (message) ->
-    req.io.emit 'message', { task, message }
-  pa.on 'done', (cardId, results) ->
-    req.io.emit 'done', { task, results, message: "Success! Images have been moved." }
-  pa.on 'error', (error) ->
-    console.log error.stack
-    req.io.emit 'error', { task, error }
-  console.log "migrating images to s3"
-  pa.migrateImagesToS3()
+for key in Object.getOwnPropertyNames peggAdmin.prototype
+  if (typeof peggAdmin.prototype[key] is 'function') and
+    (key.charAt(0) isnt '_') and
+    (key isnt 'constructor') then do (key) =>
+      app.io.route key, (req) ->
+        data = req.data
+        pa = new peggAdmin config.PARSE_APP_ID, config.PARSE_MASTER_KEY, config.FILE_PICKER_ID
+        pa.on 'message', (message) -> req.io.emit 'message', { data, message }
+        pa.on 'done', (results) -> req.io.emit 'done', { data, results }
+        pa.on 'error', (error) ->
+          console.log "ERROR: #{error.stack or JSON.stringify error}"
+          req.io.emit 'error', { data, error }
+        console.log "#{key} #{JSON.stringify data}"
+        pa[key] data
 
 app.listen app.port, ->
   console.log "Listening on http://localhost:" + app.port + "/\nPress CTRL-C to stop server."

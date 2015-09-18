@@ -53,15 +53,15 @@ class Client
     log "server: ", data.message
 
   onDone: (data) =>
-    $("##{data.task}_message")
+    $("##{data.data.task}_message")
       .html data.message
       .parent().addClass 'has-success'
-    log "#{data.task} done!", data
+    log "#{data.data.task} done!", data.data
 
   onError: (data) =>
-    message = data?.error?.message ? 'Unknown error occurred'
+    message = data?.error?.message or data?.error?.error ? 'Unknown error occurred'
     fullMessage = "ERROR: #{message} (see server output for details)"
-    @error data.task, fullMessage
+    @error data.data.task, fullMessage
 
   error: (task, message) ->
     log message
@@ -101,7 +101,7 @@ class ServerActions
       throw new Error 'Please enter 2+ choices'
 
     # do the create thing
-    @io.emit "create", type: 'Card', object: data
+    @io.emit "create", type: 'Card', object: data, task: 'createCard'
 
   deleteCard: (cardId) ->
     @io.emit 'deleteCard', cardId
