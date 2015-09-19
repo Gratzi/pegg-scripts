@@ -30,6 +30,7 @@ app.io.route 'ready', (req) ->
   console.log 'client is ready'
   req.io.emit 'message', message: "ya let's do it!"
 
+# set up routes for methods in PeggAdmin
 for key in Object.getOwnPropertyNames peggAdmin.prototype
   if (typeof peggAdmin.prototype[key] is 'function') and
     (key.charAt(0) isnt '_') and
@@ -39,7 +40,7 @@ for key in Object.getOwnPropertyNames peggAdmin.prototype
         pa = new peggAdmin config.PARSE_APP_ID, config.PARSE_MASTER_KEY, config.FILE_PICKER_ID
         pa.on 'message', (message) -> req.io.emit 'message', { data, message }
         pa[key] data
-          .then (results) -> req.io.emit 'done', { data, results }
+          .then (results) -> req.io.emit 'done', { data, results, message: 'Success!' }
           .catch (error) ->
             console.log "ERROR: #{error.stack or JSON.stringify error}"
             req.io.emit 'error', { data, error }

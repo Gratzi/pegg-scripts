@@ -10,14 +10,15 @@
   Client = (function() {
     function Client(server) {
       this.server = server;
+      this["do"] = bind(this["do"], this);
       this.onError = bind(this.onError, this);
       this.onDone = bind(this.onDone, this);
       this.onMessage = bind(this.onMessage, this);
       this.migrateS3 = bind(this.migrateS3, this);
       this.resetUser = bind(this.resetUser, this);
       this.deleteCard = bind(this.deleteCard, this);
-      this.createCard = bind(this.createCard, this);
-      $('#createCard_form').on('submit', this.createCard);
+      this.createOrUpdateCard = bind(this.createOrUpdateCard, this);
+      $('#card').on('submit', this.createOrUpdateCard);
       $('#deleteCard').on('submit', this.deleteCard);
       $('#resetUser').on('submit', this.resetUser);
       $('#migrateS3').on('submit', this.migrateS3);
@@ -26,84 +27,107 @@
       this.server.io.on('error', this.onError);
     }
 
-    Client.prototype.createCard = function(e) {
-      var data, err, error;
-      data = $(e.currentTarget).serializeObject();
-      log("creating card:", data);
-      this.reset('createCard');
-      try {
-        this.server.createCard(data);
-      } catch (error) {
-        err = error;
-        this.error('createCard', err.message);
+
+    /* Actions */
+
+    Client.prototype.createOrUpdateCard = function(e) {
+      var data;
+      data = $('#card form').serializeObject();
+      data.section = 'card';
+      if (data.cardId != null) {
+        log("upadating card:", data);
+        this["do"]('updateCard', data);
+      } else {
+        log("creating card:", data);
+        this["do"]('createCard', data);
       }
       return e.preventDefault();
     };
 
     Client.prototype.deleteCard = function(e) {
-      var cardId, err, error;
-      cardId = $('#deleteCard_id').val();
+      var cardId;
+      cardId = $('#deleteCard input[name="cardId"]').val();
       log("deleting card " + cardId);
-      this.reset('deleteCard');
-      try {
-        this.server.deleteCard(cardId);
-      } catch (error) {
-        err = error;
-        this.error('deleteCard', err.message);
-      }
+      this["do"]('deleteCard', {
+        section: 'deleteCard',
+        cardId: cardId
+      });
       return e.preventDefault();
     };
 
     Client.prototype.resetUser = function(e) {
-      var err, error, userId;
-      userId = $('#resetUser_id').val();
+      var userId;
+      userId = $('#resetUser input[name="userId"]').val();
       log("resetting user " + userId);
-      this.reset('resetUser');
-      try {
-        this.server.resetUser(userId);
-      } catch (error) {
-        err = error;
-        this.error('resetUser', err.message);
-      }
+      this["do"]('resetUser', {
+        section: 'resetUser',
+        userId: userId
+      });
       return e.preventDefault();
     };
 
     Client.prototype.migrateS3 = function(e) {
-      var err, error;
       log("migrating image content to S3");
-      this.reset('migrateS3');
-      try {
-        this.server.migrateS3();
-      } catch (error) {
-        err = error;
-        this.error('migrateS3', err.message);
-      }
+      this["do"]('migrateS3', {
+        section: 'migrateS3'
+      });
       return e.preventDefault();
     };
+
+
+    /* Server Listeners */
 
     Client.prototype.onMessage = function(data) {
       return log("server: ", data.message);
     };
 
     Client.prototype.onDone = function(data) {
-      $("#" + data.data.task + "_message").html(data.message).parent().addClass('has-success');
-      return log(data.data.task + " done!", data.data);
+      var section;
+      section = data.data.section;
+      $("#" + section + " .message").html(data.message).parent().addClass('has-success');
+      log(data.data.section + " done!", data.data);
+      return this.resetForm(section);
     };
 
     Client.prototype.onError = function(data) {
       var fullMessage, message, ref, ref1, ref2;
       message = (ref = (data != null ? (ref1 = data.error) != null ? ref1.message : void 0 : void 0) || (data != null ? (ref2 = data.error) != null ? ref2.error : void 0 : void 0)) != null ? ref : 'Unknown error occurred';
       fullMessage = "ERROR: " + message + " (see server output for details)";
-      return this.error(data.data.task, fullMessage);
+      return this.error(data.data.section, fullMessage);
     };
 
-    Client.prototype.error = function(task, message) {
-      log(message);
-      return $("#" + task + "_message").html(message).parent().addClass('has-error').removeClass('has-success');
+
+    /* Helpers */
+
+    Client.prototype.error = function(section, message) {
+      console.error(message);
+      return $("#" + section + " .message").html(message).parent().addClass('has-error').removeClass('has-success');
     };
 
-    Client.prototype.reset = function(task) {
-      return $("#" + task + "_message").html("working ...").parent().removeClass('has-success').removeClass('has-error');
+    Client.prototype["do"] = function(task, data) {
+      var err, error;
+      this.resetStyles(data.section);
+      this.showWorkingMessage(data.section);
+      try {
+        return this.server[task](data);
+      } catch (error) {
+        err = error;
+        return this.error(data.section, err.message);
+      }
+    };
+
+    Client.prototype.showWorkingMessage = function(section) {
+      return $("#" + section + " .message").html("working ...");
+    };
+
+    Client.prototype.resetForm = function(section) {
+      return $("#" + section + " form").each(function() {
+        return this.reset();
+      });
+    };
+
+    Client.prototype.resetStyles = function(section) {
+      return $("#" + section + " .message").parent().removeClass('has-success').removeClass('has-error');
     };
 
     return Client;
@@ -116,7 +140,7 @@
       this.io.emit('ready');
     }
 
-    ServerActions.prototype.createCard = function(data) {
+    ServerActions.prototype._validateCard = function(data) {
       var choice, i, j, len, ref;
       ref = data.choices;
       for (i = j = 0, len = ref.length; j < len; i = ++j) {
@@ -135,30 +159,28 @@
       if (data.choices.length < 2) {
         throw new Error('Please enter 2+ choices');
       }
-      return this.io.emit('createCard', {
-        object: data,
-        task: 'createCard'
-      });
     };
 
-    ServerActions.prototype.deleteCard = function(cardId) {
-      return this.io.emit('deleteCard', {
-        cardId: cardId,
-        task: 'deleteCard'
-      });
+    ServerActions.prototype.updateCard = function(data) {
+      this._validateCard(data);
+      return this.io.emit('updateCard', data);
     };
 
-    ServerActions.prototype.resetUser = function(userId) {
-      return this.io.emit('resetUser', {
-        userId: userId,
-        task: 'resetUser'
-      });
+    ServerActions.prototype.createCard = function(data) {
+      this._validateCard(data);
+      return this.io.emit('createCard', data);
     };
 
-    ServerActions.prototype.migrateS3 = function() {
-      return this.io.emit('migrateS3', {
-        task: 'migrateS3'
-      });
+    ServerActions.prototype.deleteCard = function(data) {
+      return this.io.emit('deleteCard', data);
+    };
+
+    ServerActions.prototype.resetUser = function(data) {
+      return this.io.emit('resetUser', data);
+    };
+
+    ServerActions.prototype.migrateS3 = function(data) {
+      return this.io.emit('migrateImagesToS3', data);
     };
 
     return ServerActions;
@@ -180,9 +202,11 @@
     };
 
     App.prototype.hashChange = function() {
-      log("showing page " + window.location.hash);
+      var page;
+      page = window.location.hash || '#home';
+      log("showing page " + page);
       $(".page").hide();
-      return $(window.location.hash).show();
+      return $(page).show();
     };
 
     return App;

@@ -31,13 +31,14 @@ class PeggAdmin extends EventEmitter
   delete: ({type, id}) ->
     @_delete type, id
 
-  createCard: ({object}) ->
-    card = object
+  createCard: (data) ->
+    card = data
     choices = card.choices
     card.choices = undefined
     @create type: 'Card', object: card
       .then (results) =>
         cardId = results.objectId
+        data.objectId = cardId
         for choice in choices then do (choice) =>
           choice.card = @_pointer 'Card', cardId
           @create type: 'Choice', object: choice
