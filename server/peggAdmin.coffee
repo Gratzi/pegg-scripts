@@ -48,7 +48,7 @@ class PeggAdmin extends EventEmitter
     @_parse.batchAsync _.slice requests, offset, newOffset
       .then (results) =>
         if results?.length > 0
-          @emit 'results', results
+          @emit 'update', results
           @updateBatchRecursive requests, newOffset
 
   # list: ({type, limit}) ->
@@ -65,7 +65,7 @@ class PeggAdmin extends EventEmitter
     @_parse.findAsync type, query
       .then (data) =>
         if data?.results?.length > 0
-          @emit 'results', data.results
+          @emit 'fetch', data.results
           query.skip += query.limit
           @findRecursive type, query
 

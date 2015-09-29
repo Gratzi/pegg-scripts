@@ -12,11 +12,11 @@ config.setEnvironment env
 exports.up = (next) ->
   db = new PeggAdmin config.PARSE_APP_ID, config.PARSE_MASTER_KEY, config.FILE_PICKER_ID
   choices = []
-  db.on 'results', (results) =>
+  db.on 'fetch', (results) =>
     console.log "got #{results.length} choices"
     choices = choices.concat results
 
-  db.on 'done', (results) =>
+  db.on 'update', (results) =>
     console.log "updated #{results.length} cards"
 
   db.findRecursive 'Choice',
@@ -24,7 +24,6 @@ exports.up = (next) ->
       skip: 0
     .then =>
       console.log "#{choices.length} total choices"
-      console.log "#{_.values(cards).length} total cards"
       cards = {}
       for choice in choices
         cardId = choice?.card?.objectId
@@ -32,6 +31,8 @@ exports.up = (next) ->
           cards[cardId] = {}
           cards[cardId].choices = {}
         cards[cardId].choices[choice.objectId] =
+          id: choice.objectId
+          cardId: cardId
           text: choice.text
           image: choice.blob or {
             big: choice.image
@@ -41,6 +42,7 @@ exports.up = (next) ->
               source: choice.imageSource
               credit: choice.imageCredit
           }
+      console.log "#{_.values(cards).length} total cards"
 
       requests = []
       for own cardId, card of cards

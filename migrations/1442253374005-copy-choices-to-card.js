@@ -21,13 +21,13 @@
     var choices, db;
     db = new PeggAdmin(config.PARSE_APP_ID, config.PARSE_MASTER_KEY, config.FILE_PICKER_ID);
     choices = [];
-    db.on('results', (function(_this) {
+    db.on('fetch', (function(_this) {
       return function(results) {
         console.log("got " + results.length + " choices");
         return choices = choices.concat(results);
       };
     })(this));
-    db.on('done', (function(_this) {
+    db.on('update', (function(_this) {
       return function(results) {
         return console.log("updated " + results.length + " cards");
       };
@@ -39,7 +39,6 @@
       return function() {
         var card, cardId, cards, choice, i, len, ref, requests;
         console.log(choices.length + " total choices");
-        console.log((_.values(cards).length) + " total cards");
         cards = {};
         for (i = 0, len = choices.length; i < len; i++) {
           choice = choices[i];
@@ -49,6 +48,8 @@
             cards[cardId].choices = {};
           }
           cards[cardId].choices[choice.objectId] = {
+            id: choice.objectId,
+            cardId: cardId,
             text: choice.text,
             image: choice.blob || {
               big: choice.image,
@@ -61,6 +62,7 @@
             }
           };
         }
+        console.log((_.values(cards).length) + " total cards");
         requests = [];
         for (cardId in cards) {
           if (!hasProp.call(cards, cardId)) continue;
