@@ -104,8 +104,11 @@ class PeggAdmin extends EventEmitter
                 originalFriendship = _.cloneDeep friendship
                 _.pull friendship.cardsMatched, cardId
                 _.pull friendship.cardsPegged, cardId
+                friendship.cardsMatchedCount = friendship.cardsMatched.length
+                friendship.cardsPeggedCount = friendship.cardsPegged.length
                 for pref in prefs
                   _.pull friendship.prefsMatched, pref.objectId
+                  friendship.prefsMatchedCount = friendship.prefsMatched.length
                 unless _.isEqual friendship, originalFriendship
                   @_parse.updateAsync 'Friendship', friendship.objectId, friendship
                     .then =>
