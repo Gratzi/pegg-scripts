@@ -93,29 +93,24 @@ class PeggAdmin extends EventEmitter
     @_getTable 'Friendship'
       .then (friendships) =>
         @emit 'message', "got #{friendships.length} friendships"
-        # find ids for prefs on this card
-        @_parse.findAsync 'Pref', where: card: card
-          .then (data) =>
-            prefIds = _.map data?.results, (pref) -> pref.objectId
-            @emit 'message', "clearing card #{cardId} and #{prefIds.length} prefs #{JSON.stringify prefIds}"
-            # make a bunch of sub-promises that resolve when the row is successfully cleared, and
-            # return a promise that resolves iff all of the rows were cleared, otherwise fails
-            Promise.all(
-              for friendship in friendships
-                originalFriendship = _.cloneDeep friendship
-                _.pull friendship.cardsMatched, cardId
-                _.pull friendship.cardsPegged, cardId
-                friendship.cardsMatchedCount = friendship.cardsMatched.length
-                friendship.cardsPeggedCount = friendship.cardsPegged.length
-                for prefId in prefIds
-                  _.pull friendship.prefsMatched, prefId
-                  friendship.prefsMatchedCount = friendship.prefsMatched.length
-                unless _.isEqual friendship, originalFriendship
-                  @_parse.updateAsync 'Friendship', friendship.objectId, friendship
-                    .then do (cardId, friendship) => =>
-                      @emit 'message', "cleared cardsMatched, cardsPegged, and prefsMatched for card #{cardId}, prefs #{JSON.stringify prefIds} from friendship: #{friendship.objectId}"
-                else null
-            )
+        @emit 'message', "clearing card #{cardId}"
+        # make a bunch of sub-promises that resolve when the row is successfully cleared, and
+        # return a promise that resolves iff all of the rows were cleared, otherwise fails
+        Promise.all(
+          for friendship in friendships
+            originalFriendship = _.cloneDeep friendship
+            _.pull friendship.cardsMatched, cardId
+            _.pull friendship.cardsPegged, cardId
+            _.pull friendship.prefsMatched, cardId
+            friendship.cardsMatchedCount = friendship.cardsMatched.length
+            friendship.cardsPeggedCount = friendship.cardsPegged.length
+            friendship.prefsMatchedCount = friendship.prefsMatched.length
+            unless _.isEqual friendship, originalFriendship
+              @_parse.updateAsync 'Friendship', friendship.objectId, friendship
+                .then do (cardId, friendship) => =>
+                  @emit 'message', "cleared cardsMatched, cardsPegged, and prefsMatched for card #{cardId} from friendship: #{friendship.objectId}"
+            else null
+        )
 
   resetUser: ({userId}) ->
     unless userId.match PARSE_OBJECT_ID
