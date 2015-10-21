@@ -77,13 +77,13 @@ class PeggAdmin extends EventEmitter
 
     Promise.all([
       @clearCardFromFriendship card
-      # @_delete 'Card', cardId
-      # @_findAndDelete 'Choice', card: card
-      # @_findAndDelete 'Comment', card: card
-      # @_findAndDelete 'Favorite', card: card
-      # @_findAndDelete 'Frown', card: card
-      # @_findAndDelete 'Pegg', card: card
-      # @_findAndDelete 'Pref', card: card
+      @_delete 'Card', cardId
+      @_findAndDelete 'Choice', card: card
+      @_findAndDelete 'Comment', card: card
+      @_findAndDelete 'Favorite', card: card
+      @_findAndDelete 'Frown', card: card
+      @_findAndDelete 'Pegg', card: card
+      @_findAndDelete 'Pref', card: card
     ])
       .then (results) => @emit 'done', cardId, results
       .catch (error) => @emit 'error', error
@@ -93,7 +93,7 @@ class PeggAdmin extends EventEmitter
     @_getTable 'Friendship'
       .then (friendships) =>
         @emit 'message', "got #{friendships.length} friendships"
-        @emit 'message', "clearing card #{cardId}"
+        @emit 'message', "clearing card #{cardId} from friendships"
         # make a bunch of sub-promises that resolve when the row is successfully cleared, and
         # return a promise that resolves iff all of the rows were cleared, otherwise fails
         Promise.all(
