@@ -292,8 +292,7 @@ class PeggAdmin extends EventEmitter
 
   _error: (message) ->
     error = { message: message, stack: new Error(message).stack }
-    @emit 'error', error
-    error
+    Promise.reject error
 
   _pointer: (type, id) ->
     throw new Error "pointer type required" unless type?
