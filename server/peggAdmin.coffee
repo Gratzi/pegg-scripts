@@ -92,11 +92,12 @@ class PeggAdmin extends EventEmitter
     cardId = card.objectId
     @_getTable 'Friendship'
       .then (friendships) =>
+        @emit 'message', "got #{friendships.length} friendships"
         # find ids for prefs on this card
         @_parse.findAsync 'Pref', where: card: card
-          .then (prefs = []) =>
-            prefIds = _.map prefs, (pref) -> pref.objectId
-            @emit 'message', "clearing card #{cardId} and #{prefs.length} prefs from #{friendships.length} friendships"
+          .then (data) =>
+            prefIds = _.map data?.results, (pref) -> pref.objectId
+            @emit 'message', "clearing card #{cardId} and #{prefIds.length} prefs #{JSON.stringify prefIds}"
             # make a bunch of sub-promises that resolve when the row is successfully cleared, and
             # return a promise that resolves iff all of the rows were cleared, otherwise fails
             Promise.all(
@@ -106,13 +107,13 @@ class PeggAdmin extends EventEmitter
                 _.pull friendship.cardsPegged, cardId
                 friendship.cardsMatchedCount = friendship.cardsMatched.length
                 friendship.cardsPeggedCount = friendship.cardsPegged.length
-                for pref in prefs
-                  _.pull friendship.prefsMatched, pref.objectId
+                for prefId in prefIds
+                  _.pull friendship.prefsMatched, prefId
                   friendship.prefsMatchedCount = friendship.prefsMatched.length
                 unless _.isEqual friendship, originalFriendship
                   @_parse.updateAsync 'Friendship', friendship.objectId, friendship
-                    .then =>
-                      @emit 'message', "cleared cardsMatched, cardsPegged, and prefsMatched for card #{cardId} from friendship: #{friendship.objectId}"
+                    .then do (cardId, friendship) => =>
+                      @emit 'message', "cleared cardsMatched, cardsPegged, and prefsMatched for card #{cardId}, prefs #{JSON.stringify prefIds} from friendship: #{friendship.objectId}"
                 else null
             )
 
