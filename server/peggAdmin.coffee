@@ -232,11 +232,17 @@ class PeggAdmin extends EventEmitter
                         credit: item.imageCredit
                       type: 'premium'
                     console.log "blob: ", blob
+                    choice = {blob}
+                    return @update type: 'Choice', id: item.objectId, object: choice
+                      .then (res) =>
+                        @emit 'message', "updated choice #{item.objectId}"
+                      .catch (error) =>
+                        @emit 'error', error
                   catch error
-                    # message = "#{error}, choiceId: #{item.objectId}, url: #{item.image}, smallBlob: #{JSON.stringify(smallBlob)}"
-                    # @emit 'error',
-                    #   message: message
-                    #   stack: new Error(message).stack
+                    message = "#{error}, choiceId: #{item.objectId}, url: #{item.image}, smallBlob: #{JSON.stringify(smallBlob)}"
+                    @emit 'error',
+                      message: message
+                      stack: new Error(message).stack
 
   _storeImageFromUrl: (item, filename, path) ->
     new Promise (resolve, reject) =>
@@ -263,7 +269,7 @@ class PeggAdmin extends EventEmitter
           for item in data.results
             _res.push item
           return _res
-          @_getRows type, limit, skip + limit, _res
+          # @_getRows type, limit, skip + limit, _res
         else
           _res
 
