@@ -5,6 +5,7 @@ class Client
     $('#card').on       'submit', @createOrUpdateCard
     $('#deleteCard').on 'submit', @deleteCard
     $('#resetUser').on  'submit', @resetUser
+    $('#deleteUser').on 'submit', @deleteUser
     $('#migrateS3').on  'submit', @migrateS3
     @server.io.on 'message', @onMessage
     @server.io.on 'done',    @onDone
@@ -29,6 +30,14 @@ class Client
     @do 'deleteCard',
       section: 'deleteCard'
       cardId: cardId
+    e.preventDefault()
+
+  deleteUser: (e) =>
+    userId = $('#deleteUser input[name="userId"]').val()
+    log "deleting user #{userId}"
+    @do 'deleteUser',
+      section: 'deleteUser'
+      userId: userId
     e.preventDefault()
 
   resetUser: (e) =>
@@ -129,6 +138,9 @@ class ServerActions
 
   resetUser: (data) ->
     @io.emit 'resetUser', data
+
+  deleteUser: (data) ->
+    @io.emit 'deleteUser', data
 
   migrateS3: (data) ->
     @io.emit 'migrateImagesToS3', data

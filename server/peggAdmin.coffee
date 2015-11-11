@@ -112,6 +112,54 @@ class PeggAdmin extends EventEmitter
             else null
         )
 
+  deleteUser: ({userId}) ->
+    unless userId.match PARSE_OBJECT_ID
+      return @_error "Invalid user ID: #{userId}"
+
+    user = @_pointer '_User', userId
+
+    Promise.all([
+      # XXX If we want to enable (optionally) resetting user to pristine state, como
+      # recién nacido, then we'd include the following items:
+      #
+      @_findAndDelete 'Comment', author: user
+      @_findAndDelete 'Comment', peggee: user
+      @_findAndDelete 'Favorite', user: user
+      @_findAndDelete 'Friendship', user: user
+      @_findAndDelete 'Friendship', friend: user
+      @_findAndDelete 'Flag', peggee: user
+      @_findAndDelete 'Flag', user: user
+      @_findAndDelete 'Frown', user: user
+      @_findAndDelete 'Pegg', user: user
+      @_findAndDelete 'Pegg', peggee: user
+      @_findAndDelete 'Pref', user: user
+      @_findAndDelete 'SupportComment', author: user
+      @_findAndDelete 'SupportComment', peggee: user
+      @_findAndDelete 'UserMood', user: user
+      @_findAndDelete 'UserSetting', user: user
+      #
+      # Also:
+      # - find all cards made by user then @deleteCard
+      # - if we wanted to be really thorough we'd collect IDs and counts for Peggs
+      #   we delete and decrement PeggCounts
+      #
+      # To totally nuke the user, also include:
+      #
+      @_delete '_User', userId
+      @_findAndDelete '_Session', user: user
+      @_findAndDelete '_Role', name: "#{userId}_FacebookFriends"
+      @_findAndDelete '_Role', name: "#{userId}_Friends"
+      @_findAndDelete 'UserPrivates', user: user
+      #
+      @_findAndDelete 'Pref', user: user
+      @_findAndDelete 'Pegg', user: user
+      @_findAndDelete 'Pegg', peggee: user
+      @clearHasPreffed {userId}
+      @clearHasPegged {userId}
+    ])
+      .then (results) => @emit 'done', userId, results
+      .catch (error) => @emit 'error', error
+
   resetUser: ({userId}) ->
     unless userId.match PARSE_OBJECT_ID
       return @_error "Invalid user ID: #{userId}"
