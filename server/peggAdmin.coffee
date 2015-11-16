@@ -307,7 +307,7 @@ class PeggAdmin extends EventEmitter
 
   _getTable: (type) ->
     @emit 'message', "getting table #{type}"
-    @_getRows type, 20, 0
+    @_getRows type, 1000, 0
 
   _getRows: (type, limit, skip, _res = []) ->
     @_parse.findManyAsync type, "?limit=#{limit}&skip=#{skip}"
@@ -316,8 +316,7 @@ class PeggAdmin extends EventEmitter
         if data?.results?.length > 0
           for item in data.results
             _res.push item
-          return _res
-          # @_getRows type, limit, skip + limit, _res
+          @_getRows type, limit, skip + limit, _res
         else
           _res
 
@@ -327,11 +326,11 @@ class PeggAdmin extends EventEmitter
     # find items for these conditions, and return a promise
     @_parse.findAsync type, where: conditions
       .then (data) =>
-        @emit 'message', "found #{data.results.length} #{type} items where #{@_pretty conditions}"
+        @emit 'message', "found #{data?.results?.length} #{type} items where #{@_pretty conditions}"
         # make a bunch of sub-promises that resolve when the row is successfully deleted, and
         # return a promise that resolves iff all of the rows were deleted, otherwise fails
         Promise.all(
-          for item in data.results
+          for item in data?.results
             @_delete type, item.objectId
         )
 

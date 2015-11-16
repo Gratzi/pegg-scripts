@@ -30,7 +30,7 @@ app.io.route 'ready', (req) ->
   console.log 'client is ready'
   req.io.emit 'message', message: "ya let's do it!"
 
-handleError = (error) ->
+handleError = (error, req) ->
   console.log "ERROR: #{error.stack or JSON.stringify error}"
   req.io.emit 'error', { data, error }
 
@@ -43,10 +43,10 @@ for key in Object.getOwnPropertyNames peggAdmin.prototype
         data = req.data
         pa = new peggAdmin config.PARSE_APP_ID, config.PARSE_MASTER_KEY, config.FILE_PICKER_ID
         pa.on 'message', (message) -> req.io.emit 'message', { data, message }
-        pa.on 'error', handleError
+        pa.on 'error', (error) -> handleError error, req
         pa[key] data
           .then (results) -> req.io.emit 'done', { data, results, message: 'Success!' }
-          .catch handleError
+          .catch (error) -> handleError error, req
 
 app.listen app.port, ->
   console.log "Listening on http://localhost:" + app.port + "/\nPress CTRL-C to stop server."
