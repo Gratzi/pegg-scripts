@@ -32,6 +32,7 @@ class PeggAdmin extends EventEmitter
     @_delete type, id
 
   createCard: (data) ->
+    cardId = null
     card = data
     choices = card.choices
     card.choices = undefined
@@ -39,9 +40,16 @@ class PeggAdmin extends EventEmitter
       .then (results) =>
         cardId = results.objectId
         data.objectId = cardId
-        for choice in choices then do (choice) =>
-          choice.card = @_pointer 'Card', cardId
-          @create type: 'Choice', object: choice
+        Promise.all(
+          for choice in choices then do (choice, cardId) =>
+            choice.card = @_pointer 'Card', cardId
+            @create type: 'Choice', object: choice
+        )
+      .then (choices) =>
+        for choice in choices
+          choice.cardId = cardId
+        card.choices = JSON.stringify choices
+        @update type: 'Card', id: cardId, object: card
 
   updateBatchRecursive: (requests, offset) ->
     newOffset = offset + 50 # max batch size
