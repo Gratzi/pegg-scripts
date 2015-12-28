@@ -45,10 +45,14 @@ class PeggAdmin extends EventEmitter
             choice.card = @_pointer 'Card', cardId
             @create type: 'Choice', object: choice
         )
-      .then (choices) =>
-        for choice in choices
+      .then (results) =>
+        for choice, i in choices
+          choice.id = results[i].objectId
           choice.cardId = cardId
-        card.choices = JSON.stringify choices
+          choice.image = choice.blob
+          choice.blob = undefined
+          choice.card = undefined
+        card.choices = _.indexBy choices, 'id'
         @update type: 'Card', id: cardId, object: card
 
   updateBatchRecursive: (requests, offset) ->
