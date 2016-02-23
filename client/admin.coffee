@@ -6,7 +6,8 @@ class Client
     $('#deleteCard').on 'submit', @deleteCard
     $('#resetUser').on  'submit', @resetUser
     $('#deleteUser').on 'submit', @deleteUser
-    $('#migrateS3').on  'submit', @migrateS3
+    $('#script_migrateS3').on  'submit', @migrateS3
+    $('#script_updateBesties').on  'submit', @updateBesties
     @server.io.on 'message', @onMessage
     @server.io.on 'done',    @onDone
     @server.io.on 'error',   @onError
@@ -50,7 +51,12 @@ class Client
 
   migrateS3: (e) =>
     log "migrating image content to S3"
-    @do 'migrateS3', section: 'migrateS3'
+    @do 'migrateS3', section: 'scripts'
+    e.preventDefault()
+
+  updateBesties: (e) =>
+    log "updating bestie scores"
+    @do 'updateBesties', section: 'scripts'
     e.preventDefault()
 
   ### Server Listeners ###
@@ -144,6 +150,9 @@ class ServerActions
 
   migrateS3: (data) ->
     @io.emit 'migrateImagesToS3', data
+
+  updateBesties: (data) ->
+    @io.emit 'updateBesties', data
 
 class App
   constructor: ->

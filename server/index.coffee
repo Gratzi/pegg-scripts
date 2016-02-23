@@ -32,7 +32,7 @@ app.io.route 'ready', (req) ->
 
 handleError = (error, req) ->
   console.log "ERROR: #{error.stack or JSON.stringify error}"
-  req.io.emit 'error', { data, error }
+  req.io.emit 'error', { data: req.data, error }
 
 # set up routes for methods in PeggAdmin
 for key in Object.getOwnPropertyNames peggAdmin.prototype

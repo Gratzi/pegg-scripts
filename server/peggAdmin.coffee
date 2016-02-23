@@ -250,6 +250,38 @@ class PeggAdmin extends EventEmitter
                   @emit 'message', "cleared hasPegged from pref: #{pref.objectId}"
         )
 
+  updateBesties: =>
+    @_getTable 'Pegg'
+      .then (results) =>
+        byUser = _.groupBy results, (pegg) => pegg.user.objectId
+        for own userId, resultsByUser of byUser
+          # console.log "results for user #{userId}"
+          byPeggee = _.groupBy resultsByUser, (pegg) => pegg.peggee.objectId
+          for own peggeeId, resultsByPeggee of byPeggee
+            # console.log "results for peggee #{peggeeId}"
+            byCard = _.groupBy resultsByPeggee, (pegg) => pegg.card.objectId
+            cardsPlayed = 0
+            score = 0
+            for own cardId, resultsByCard of byCard
+              # console.log "results for card #{cardId}"
+              cardsPlayed++
+              tryCount = _.reduce resultsByCard, ((sum) => sum+1), -1
+              if tryCount > 3 then tryCount = 3
+              score += 10 - 3 * tryCount
+            console.log "create bestie: user: #{userId}, peggee: #{peggeeId}, cards: #{cardsPlayed}, score: #{score}"
+            bestie =
+              ACL:
+                "#{userId}": read: true
+                "role:#{userId}_Friends": read: true
+              cards: cardsPlayed
+              score: score
+              user: @_pointer '_User', userId
+              friend: @_pointer '_User', peggeeId
+            @create type: 'Bestie', object: bestie
+              .error (e) =>
+                console.error e
+                @emit 'error', e
+
   migrateImagesToS3: ->
     @_getTable 'Choice'
       .then (results) =>

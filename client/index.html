@@ -73,7 +73,7 @@
                             <a href="#deleteCard">Delete Card</a>
                             <a href="#resetUser">Reset User</a>
                             <a href="#deleteUser">Delete User</a>
-                            <a href="#migrateS3">Migrate Content</a>
+                            <a href="#scripts">Scripts</a>
                         </li>
                     </ul>
                 </div>
@@ -311,13 +311,37 @@
                     <!-- /.col-lg-12 -->
                 </div>
             </section>
-            <section id="migrateS3" class="page" style="display: none;">
+            <section id="scripts" class="page" style="display: none;">
                 <!-- ============================================================== -->
                 <!-- RESET USER                                                     -->
                 <!-- ============================================================== -->
                 <div class="row">
                     <div class="col-lg-12">
-                        <h1 class="page-header">Migrate images to S3</h1>
+                        <h1 class="page-header">Admin Scripts</h1>
+                    </div>
+                    <!-- /.col-lg-12 -->
+                </div>
+                <p class="message help-block">Click to run script</p>
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">Update Bestie Scores</div>
+                            <div class="panel-body">
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <form id="script_updateBesties" role="form">
+                                            <p>
+                                                <button class="btn btn-default">Update</button>
+                                            </p>
+                                        </form>
+                                    </div>
+                                    <!-- /.col-lg-12 (nested) -->
+                                </div>
+                                <!-- /.row (nested) -->
+                            </div>
+                            <!-- /.panel-body -->
+                        </div>
+                        <!-- /.panel -->
                     </div>
                     <!-- /.col-lg-12 -->
                 </div>
@@ -328,7 +352,7 @@
                             <div class="panel-body">
                                 <div class="row">
                                     <div class="col-lg-12">
-                                        <form role="form">
+                                        <form id="script_migrateS3" role="form">
                                             <p>
                                                 <button class="btn btn-default">Migrate</button>
                                             </p>
@@ -372,7 +396,6 @@
 
     <!-- Pegg Client Codes -->
     <script type="text/javascript" src="/run/superagent.js"></script>
-    <script type="text/javascript" src="/run/migrateS3.js"></script>
     <script type="text/javascript" src="/run/admin.js"></script>
 </body>d
 </html>

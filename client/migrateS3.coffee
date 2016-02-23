@@ -1,3 +1,8 @@
+###
+# DEPRECATED, see server/peggAdmin.coffee:migrateImagesToS3()
+###
+
+
 filepicker.setKey "A36NnDQaISmXZ8IOmKGEQz"
 request = window.superagent
 S3Bucket = "https://pegg.s3.amazonaws.com/"

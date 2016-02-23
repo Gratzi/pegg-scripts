@@ -14,6 +14,7 @@
       this.onError = bind(this.onError, this);
       this.onDone = bind(this.onDone, this);
       this.onMessage = bind(this.onMessage, this);
+      this.updateBesties = bind(this.updateBesties, this);
       this.migrateS3 = bind(this.migrateS3, this);
       this.resetUser = bind(this.resetUser, this);
       this.deleteUser = bind(this.deleteUser, this);
@@ -23,7 +24,8 @@
       $('#deleteCard').on('submit', this.deleteCard);
       $('#resetUser').on('submit', this.resetUser);
       $('#deleteUser').on('submit', this.deleteUser);
-      $('#migrateS3').on('submit', this.migrateS3);
+      $('#script_migrateS3').on('submit', this.migrateS3);
+      $('#script_updateBesties').on('submit', this.updateBesties);
       this.server.io.on('message', this.onMessage);
       this.server.io.on('done', this.onDone);
       this.server.io.on('error', this.onError);
@@ -82,7 +84,15 @@
     Client.prototype.migrateS3 = function(e) {
       log("migrating image content to S3");
       this["do"]('migrateS3', {
-        section: 'migrateS3'
+        section: 'scripts'
+      });
+      return e.preventDefault();
+    };
+
+    Client.prototype.updateBesties = function(e) {
+      log("updating bestie scores");
+      this["do"]('updateBesties', {
+        section: 'scripts'
       });
       return e.preventDefault();
     };
@@ -198,6 +208,10 @@
 
     ServerActions.prototype.migrateS3 = function(data) {
       return this.io.emit('migrateImagesToS3', data);
+    };
+
+    ServerActions.prototype.updateBesties = function(data) {
+      return this.io.emit('updateBesties', data);
     };
 
     return ServerActions;
