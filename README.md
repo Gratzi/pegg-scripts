@@ -26,6 +26,9 @@ migrate up
 migrate down
 ```
 
+Run in production
+```
+NODE_ENV=production npm run dev
 
 ## TODO
 

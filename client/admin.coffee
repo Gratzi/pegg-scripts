@@ -51,7 +51,7 @@ class Client
 
   migrateS3: (e) =>
     log "migrating image content to S3"
-    @do 'migrateS3', section: 'scripts'
+    @do 'migrateImagesToS3', section: 'scripts'
     e.preventDefault()
 
   updateBesties: (e) =>
@@ -91,7 +91,7 @@ class Client
     @resetStyles data.section
     @showWorkingMessage data.section
     try
-      @server[task] data
+      @server.do task, data
     catch err
       @error data.section, err.message
 
@@ -114,6 +114,12 @@ class ServerActions
     # listen to actions from server
     @io = window.io.connect()
     @io.emit 'ready'
+
+  do: (task, data) =>
+    if @[task]?
+      @[task] data
+    else
+      @io.emit task, data
 
   _validateCard: (data) ->
     # validate it and clean it up
@@ -138,21 +144,6 @@ class ServerActions
   createCard: (data) ->
     @_validateCard data
     @io.emit 'createCard', data
-
-  deleteCard: (data) ->
-    @io.emit 'deleteCard', data
-
-  resetUser: (data) ->
-    @io.emit 'resetUser', data
-
-  deleteUser: (data) ->
-    @io.emit 'deleteUser', data
-
-  migrateS3: (data) ->
-    @io.emit 'migrateImagesToS3', data
-
-  updateBesties: (data) ->
-    @io.emit 'updateBesties', data
 
 class App
   constructor: ->
