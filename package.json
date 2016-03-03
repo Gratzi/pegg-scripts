@@ -33,6 +33,7 @@
     "bluebird": "~2.3.6",
     "body-parser": "^1.8.3",
     "connect-assets": "^4.3.0",
+    "eventemitter2": "^1.0.0",
     "express.io": "^1.1.13",
     "lodash": "~3.9.3",
     "node-filepicker": "^0.1.2",

@@ -11,6 +11,7 @@
     function Client(server) {
       this.server = server;
       this["do"] = bind(this["do"], this);
+      this.onCardLoaded = bind(this.onCardLoaded, this);
       this.onError = bind(this.onError, this);
       this.onDone = bind(this.onDone, this);
       this.onMessage = bind(this.onMessage, this);
@@ -20,7 +21,10 @@
       this.deleteUser = bind(this.deleteUser, this);
       this.deleteCard = bind(this.deleteCard, this);
       this.createOrUpdateCard = bind(this.createOrUpdateCard, this);
-      $('#card').on('submit', this.createOrUpdateCard);
+      this.loadCard = bind(this.loadCard, this);
+      $('#cardId').on('submit', this.loadCard);
+      $('#loadCard').on('click', this.loadCard);
+      $('#cardDetail').on('submit', this.createOrUpdateCard);
       $('#deleteCard').on('submit', this.deleteCard);
       $('#resetUser').on('submit', this.resetUser);
       $('#deleteUser').on('submit', this.deleteUser);
@@ -29,16 +33,29 @@
       this.server.io.on('message', this.onMessage);
       this.server.io.on('done', this.onDone);
       this.server.io.on('error', this.onError);
+      this.server.io.on('cardLoaded', this.onCardLoaded);
     }
 
 
     /* Actions */
 
+    Client.prototype.loadCard = function(e) {
+      var cardId;
+      e.preventDefault();
+      cardId = $('#cardId input[name="objectId"]').val();
+      return this["do"]('loadCard', {
+        id: cardId,
+        section: 'loadCard'
+      });
+    };
+
     Client.prototype.createOrUpdateCard = function(e) {
-      var data;
-      data = $('#card form').serializeObject();
-      data.section = 'card';
-      if (data.cardId != null) {
+      var data, ref;
+      data = {
+        card: $('#cardDetail').serializeObject(),
+        section: 'card'
+      };
+      if (((ref = data.card.objectId) != null ? ref.length : void 0) > 0) {
         log("upadating card:", data);
         this["do"]('updateCard', data);
       } else {
@@ -83,7 +100,7 @@
 
     Client.prototype.migrateS3 = function(e) {
       log("migrating image content to S3");
-      this["do"]('migrateS3', {
+      this["do"]('migrateImagesToS3', {
         section: 'scripts'
       });
       return e.preventDefault();
@@ -101,14 +118,15 @@
     /* Server Listeners */
 
     Client.prototype.onMessage = function(data) {
-      return log("server: ", data.message);
+      return log("server: ", data);
     };
 
-    Client.prototype.onDone = function(data) {
-      var section;
-      section = data.data.section;
-      $("#" + section + " .message").html(data.message).parent().addClass('has-success');
-      log(data.data.section + " done!", data.data);
+    Client.prototype.onDone = function(arg) {
+      var data, message, results, section;
+      data = arg.data, results = arg.results, message = arg.message;
+      section = data.section;
+      $("#" + section + " .message").html(message).parent().addClass('has-success');
+      log(data.section + " done!", data);
       return this.resetForm(section);
     };
 
@@ -117,6 +135,24 @@
       message = (ref = (data != null ? (ref1 = data.error) != null ? ref1.message : void 0 : void 0) || (data != null ? (ref2 = data.error) != null ? ref2.error : void 0 : void 0)) != null ? ref : 'Unknown error occurred';
       fullMessage = "ERROR: " + message + " (see server output for details)";
       return this.error(data.data.section, fullMessage);
+    };
+
+    Client.prototype.onCardLoaded = function(data) {
+      var choice, i, j, len, ref, results1;
+      this.resetForm('card');
+      $('#card input[name="objectId"]').val(data.objectId);
+      $('#card input[name="question"]').val(data.question);
+      data.choices = _.values(data.choices);
+      ref = data.choices;
+      results1 = [];
+      for (i = j = 0, len = ref.length; j < len; i = ++j) {
+        choice = ref[i];
+        $('#card input[name="choices[' + i + '][text]"]').val(choice.text);
+        $('#card input[name="choices[' + i + '][image][meta][url]"]').val(choice.image.meta.url);
+        $('#card input[name="choices[' + i + '][image][meta][source]"]').val(choice.image.meta.source);
+        results1.push($('#card input[name="choices[' + i + '][image][meta][credit]"]').val(choice.image.meta.credit));
+      }
+      return results1;
     };
 
 
@@ -132,7 +168,7 @@
       this.resetStyles(data.section);
       this.showWorkingMessage(data.section);
       try {
-        return this.server[task](data);
+        return this.server["do"](task, data);
       } catch (error) {
         err = error;
         return this.error(data.section, err.message);
@@ -159,59 +195,53 @@
 
   ServerActions = (function() {
     function ServerActions() {
+      this["do"] = bind(this["do"], this);
       this.io = window.io.connect();
       this.io.emit('ready');
     }
 
-    ServerActions.prototype._validateCard = function(data) {
+    ServerActions.prototype["do"] = function(task, data) {
+      if (this[task] != null) {
+        return this[task](data);
+      } else {
+        return this.io.emit(task, data);
+      }
+    };
+
+    ServerActions.prototype._cleanupCard = function(card) {
       var choice, i, j, len, ref;
-      ref = data.choices;
+      ref = card.choices;
       for (i = j = 0, len = ref.length; j < len; i = ++j) {
         choice = ref[i];
-        if (_.isEmpty(choice.text) && _.isEmpty(choice.blob.meta.url)) {
-          data.choices[i] = void 0;
+        if (_.isEmpty(choice.text) && _.isEmpty(choice.image.meta.url)) {
+          card.choices[i] = void 0;
         } else {
-          choice.blob.small = choice.blob.meta.url;
-          choice.blob.big = choice.blob.meta.url;
+          choice.image.small = choice.image.meta.url;
+          choice.image.big = choice.image.meta.url;
         }
       }
-      if (_.isEmpty(data.question)) {
+      return card.choices = _.compact(card.choices);
+    };
+
+    ServerActions.prototype._validateCard = function(card) {
+      if (_.isEmpty(card.question)) {
         throw new Error('Please enter a question');
       }
-      data.choices = _.compact(data.choices);
-      if (data.choices.length < 2) {
+      if (card.choices.length < 2) {
         throw new Error('Please enter 2+ choices');
       }
     };
 
     ServerActions.prototype.updateCard = function(data) {
-      this._validateCard(data);
+      this._cleanupCard(data.card);
+      this._validateCard(data.card);
       return this.io.emit('updateCard', data);
     };
 
     ServerActions.prototype.createCard = function(data) {
-      this._validateCard(data);
+      this._cleanupCard(data.card);
+      this._validateCard(data.card);
       return this.io.emit('createCard', data);
-    };
-
-    ServerActions.prototype.deleteCard = function(data) {
-      return this.io.emit('deleteCard', data);
-    };
-
-    ServerActions.prototype.resetUser = function(data) {
-      return this.io.emit('resetUser', data);
-    };
-
-    ServerActions.prototype.deleteUser = function(data) {
-      return this.io.emit('deleteUser', data);
-    };
-
-    ServerActions.prototype.migrateS3 = function(data) {
-      return this.io.emit('migrateImagesToS3', data);
-    };
-
-    ServerActions.prototype.updateBesties = function(data) {
-      return this.io.emit('updateBesties', data);
     };
 
     return ServerActions;

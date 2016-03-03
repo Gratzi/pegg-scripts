@@ -2,22 +2,31 @@ log = -> console.log arguments...
 
 class Client
   constructor: (@server) ->
-    $('#card').on       'submit', @createOrUpdateCard
-    $('#deleteCard').on 'submit', @deleteCard
-    $('#resetUser').on  'submit', @resetUser
-    $('#deleteUser').on 'submit', @deleteUser
+    $('#cardId').on     'submit',   @loadCard
+    $('#loadCard').on   'click',    @loadCard
+    $('#cardDetail').on 'submit',   @createOrUpdateCard
+    $('#deleteCard').on 'submit',   @deleteCard
+    $('#resetUser').on  'submit',   @resetUser
+    $('#deleteUser').on 'submit',   @deleteUser
     $('#script_migrateS3').on  'submit', @migrateS3
     $('#script_updateBesties').on  'submit', @updateBesties
-    @server.io.on 'message', @onMessage
-    @server.io.on 'done',    @onDone
-    @server.io.on 'error',   @onError
+    @server.io.on 'message',    @onMessage
+    @server.io.on 'done',       @onDone
+    @server.io.on 'error',      @onError
+    @server.io.on 'cardLoaded', @onCardLoaded
 
   ### Actions ###
 
+  loadCard: (e) =>
+    e.preventDefault()
+    cardId = $('#cardId input[name="objectId"]').val()
+    @do 'loadCard', id: cardId, section: 'loadCard'
+
   createOrUpdateCard: (e) =>
-    data = $('#card form').serializeObject()
-    data.section = 'card'
-    if data.cardId?
+    data =
+      card: $('#cardDetail').serializeObject()
+      section: 'card'
+    if data.card.objectId?.length > 0
       log "upadating card:", data
       @do 'updateCard', data
     else
@@ -62,20 +71,31 @@ class Client
   ### Server Listeners ###
 
   onMessage: (data) =>
-    log "server: ", data.message
+    log "server: ", data
 
-  onDone: (data) =>
-    section = data.data.section
+  onDone: ({data, results, message}) =>
+    section = data.section
     $("##{section} .message")
-      .html data.message
+      .html message
       .parent().addClass 'has-success'
-    log "#{data.data.section} done!", data.data
+    log "#{data.section} done!", data
     @resetForm section
 
   onError: (data) =>
     message = data?.error?.message or data?.error?.error ? 'Unknown error occurred'
     fullMessage = "ERROR: #{message} (see server output for details)"
     @error data.data.section, fullMessage
+
+  onCardLoaded: (data) =>
+    @resetForm 'card'
+    $('#card input[name="objectId"]').val data.objectId
+    $('#card input[name="question"]').val data.question
+    data.choices = _.values data.choices
+    for choice, i in data.choices
+      $('#card input[name="choices['+i+'][text]"]').val choice.text
+      $('#card input[name="choices['+i+'][image][meta][url]"]').val choice.image.meta.url
+      $('#card input[name="choices['+i+'][image][meta][source]"]').val choice.image.meta.source
+      $('#card input[name="choices['+i+'][image][meta][credit]"]').val choice.image.meta.credit
 
   ### Helpers ###
 
@@ -121,28 +141,30 @@ class ServerActions
     else
       @io.emit task, data
 
-  _validateCard: (data) ->
-    # validate it and clean it up
-    for choice, i in data.choices
-      if _.isEmpty(choice.text) and _.isEmpty(choice.blob.meta.url)
-        data.choices[i] = undefined
+  _cleanupCard: (card) ->
+    for choice, i in card.choices
+      if _.isEmpty(choice.text) and _.isEmpty(choice.image.meta.url)
+        card.choices[i] = undefined
       else
-        choice.blob.small = choice.blob.meta.url
-        choice.blob.big = choice.blob.meta.url
+        choice.image.small = choice.image.meta.url
+        choice.image.big = choice.image.meta.url
+    card.choices = _.compact card.choices
 
-    if _.isEmpty(data.question)
+  _validateCard: (card) ->
+    if _.isEmpty(card.question)
       throw new Error 'Please enter a question'
 
-    data.choices = _.compact data.choices
-    if data.choices.length < 2
+    if card.choices.length < 2
       throw new Error 'Please enter 2+ choices'
 
   updateCard: (data) ->
-    @_validateCard data
+    @_cleanupCard data.card
+    @_validateCard data.card
     @io.emit 'updateCard', data
 
   createCard: (data) ->
-    @_validateCard data
+    @_cleanupCard data.card
+    @_validateCard data.card
     @io.emit 'createCard', data
 
 class App

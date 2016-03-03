@@ -28,7 +28,7 @@ app.get '/', (req, res) ->
 
 app.io.route 'ready', (req) ->
   console.log 'client is ready'
-  req.io.emit 'message', message: "ya let's do it!"
+  req.io.emit 'message', "ya let's do it!"
 
 handleError = (error, req) ->
   console.log "ERROR: #{error.stack or JSON.stringify error}"
@@ -42,8 +42,10 @@ for key in Object.getOwnPropertyNames peggAdmin.prototype
       app.io.route key, (req) ->
         data = req.data
         pa = new peggAdmin config.PARSE_APP_ID, config.PARSE_MASTER_KEY, config.FILE_PICKER_ID
-        pa.on 'message', (message) -> req.io.emit 'message', { data, message }
         pa.on 'error', (error) -> handleError error, req
+        pa.onAny (event, data) ->
+          unless event is 'error'
+            req.io.emit event, data
         pa[key] data
           .then (results) -> req.io.emit 'done', { data, results, message: 'Success!' }
           .catch (error) -> handleError error, req

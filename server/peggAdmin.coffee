@@ -2,24 +2,25 @@ fs = require 'fs'
 Promise = require 'bluebird'
 Parse = require('node-parse-api').Parse
 _ = require 'lodash'
-EventEmitter = require('events').EventEmitter
+EventEmitter2 = require('eventemitter2').EventEmitter2
 exec = require('child_process').exec
 
 PARSE_OBJECT_ID = /^[0-z]{8,10}$/
 PARSE_MAX_RESULTS = 1000
 
-class PeggAdmin extends EventEmitter
+class PeggAdmin extends EventEmitter2
 
   constructor: (parseAppId, parseMasterKey, @filePickerId) ->
     super
+      wildcard: true
+      newListener: false
+      delimiter: ':'
     @_parse = Promise.promisifyAll(new Parse parseAppId, parseMasterKey)
 
   get: ({type, id}) ->
     @_parse.findWithObjectIdAsync type, id
       .then (results) =>
         @emit 'done', results
-        results
-      .catch (error) => @emit 'error', error
 
   create: ({type, object}) ->
     @emit 'message', "creating #{type}"
@@ -31,11 +32,39 @@ class PeggAdmin extends EventEmitter
   delete: ({type, id}) ->
     @_delete type, id
 
-  createCard: (data) ->
+  loadCard: ({id}) ->
+    console.log "loadCard: #{id}"
+    @_parse.findWithObjectIdAsync 'Card', id
+      .then (results) =>
+        console.log "loadCard results: #{JSON.stringify results}"
+        @emit 'cardLoaded', results
+
+  updateCard: (data) =>
+    cardId = data.card.objectId
+    console.log "updating card #{cardId}"
+    card = data.card
+    console.log JSON.stringify card
+    choices = card.choices
+    Promise.all(
+      for choice in choices then do (choice, cardId) =>
+        choice.card = @_pointer 'Card', cardId
+        @create type: 'Choice', object: choice
+    ).then (results) =>
+      for choice, i in choices
+        choice.id = results[i].objectId
+        choice.cardId = cardId
+        choice.card = undefined
+      card.choices = _.indexBy choices, 'id'
+      card.ACL = "*": read: true
+      @update type: 'Card', id: cardId, object: card
+
+  createCard: (data) =>
+    console.log "creating card"
     cardId = null
-    card = data
+    card = data.card
     choices = card.choices
     card.choices = undefined
+    card.ACL = "*": read: true
     @create type: 'Card', object: card
       .then (results) =>
         cardId = results.objectId
@@ -49,8 +78,6 @@ class PeggAdmin extends EventEmitter
         for choice, i in choices
           choice.id = results[i].objectId
           choice.cardId = cardId
-          choice.image = choice.blob
-          choice.blob = undefined
           choice.card = undefined
         card.choices = _.indexBy choices, 'id'
         @update type: 'Card', id: cardId, object: card
@@ -98,7 +125,6 @@ class PeggAdmin extends EventEmitter
       @_findAndDelete 'Pref', card: card
     ])
       .then (results) => @emit 'done', cardId, results
-      .catch (error) => @emit 'error', error
 
   clearCardFromFriendship: (card) =>
     cardId = card.objectId
@@ -170,7 +196,6 @@ class PeggAdmin extends EventEmitter
       @clearHasPegged {userId}
     ])
       .then (results) => @emit 'done', userId, results
-      .catch (error) => @emit 'error', error
 
   resetUser: ({userId}) ->
     unless userId.match PARSE_OBJECT_ID
@@ -216,7 +241,6 @@ class PeggAdmin extends EventEmitter
       @clearHasPegged {userId}
     ])
       .then (results) => @emit 'done', userId, results
-      .catch (error) => @emit 'error', error
 
   clearHasPreffed: ({userId}) =>
     # get all the cards, and return a promise
@@ -328,8 +352,6 @@ class PeggAdmin extends EventEmitter
                     return @update type: 'Choice', id: item.objectId, object: choice
                       .then (res) =>
                         @emit 'message', "updated choice #{item.objectId}"
-                      .catch (error) =>
-                        @emit 'error', error
                   catch error
                     message = "#{error}, choiceId: #{item.objectId}, url: #{item.image}, smallBlob: #{JSON.stringify(smallBlob)}"
                     @emit 'error',
