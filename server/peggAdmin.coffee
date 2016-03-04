@@ -19,56 +19,74 @@ class PeggAdmin extends EventEmitter2
 
   get: ({type, id}) ->
     @_parse.findWithObjectIdAsync type, id
-      .then (results) =>
-        @emit 'done', results
+      .then (result) =>
+        @emit 'message', "got #{type}: #{id}"
+        result
 
   create: ({type, object}) ->
     @emit 'message', "creating #{type}"
     @_parse.insertAsync type, object
+      .then (result) =>
+        @emit 'message', "created #{type}: #{result.objectId}"
+        result
 
   update: ({type, id, object}) ->
     @_parse.updateAsync type, id, object
+      .then (result) =>
+        @emit 'message', "updated #{type}: #{id}"
+        result
 
   delete: ({type, id}) ->
-    @_delete type, id
+    @_parse.deleteAsync type, id
+      .then (result) =>
+        @emit 'message', "deleted #{type}: #{id}"
+        result
 
   loadCard: ({id}) ->
     console.log "loadCard: #{id}"
     @_parse.findWithObjectIdAsync 'Card', id
       .then (results) =>
-        console.log "loadCard results: #{JSON.stringify results}"
         @emit 'cardLoaded', results
 
-  updateCard: (data) =>
-    cardId = data.card.objectId
+  updateCard: ({card}) =>
+    cardId = card.objectId
     console.log "updating card #{cardId}"
-    card = data.card
-    console.log JSON.stringify card
+    card = card
     choices = card.choices
     Promise.all(
-      for choice in choices then do (choice, cardId) =>
+      for choice, i in choices then do (choice, i, cardId) =>
         choice.card = @_pointer 'Card', cardId
-        @create type: 'Choice', object: choice
-    ).then (results) =>
-      for choice, i in choices
-        choice.id = results[i].objectId
-        choice.cardId = cardId
-        choice.card = undefined
-      card.choices = _.indexBy choices, 'id'
+        if _.isEmpty choice.objectId
+          @create type: 'Choice', object: choice
+            .then (result) =>
+              choice.objectId = result.objectId
+              choice.cardId = cardId
+              choice.card = undefined
+            .reflect()
+        else if _.isEmpty choice.text
+          delete choices[i]
+          @delete type: 'Choice', id: choice.objectId
+            .reflect()
+        else
+          @update type: 'Choice', id: choice.objectId, object: choice
+            .then (result) =>
+              choice.cardId = cardId
+              choice.card = undefined
+            .reflect()
+    ).then =>
+      card.choices = _.indexBy choices, 'objectId'
       card.ACL = "*": read: true
       @update type: 'Card', id: cardId, object: card
 
-  createCard: (data) =>
+  createCard: ({card}) =>
     console.log "creating card"
     cardId = null
-    card = data.card
     choices = card.choices
     card.choices = undefined
     card.ACL = "*": read: true
     @create type: 'Card', object: card
       .then (results) =>
         cardId = results.objectId
-        data.objectId = cardId
         Promise.all(
           for choice in choices then do (choice, cardId) =>
             choice.card = @_pointer 'Card', cardId
@@ -116,7 +134,7 @@ class PeggAdmin extends EventEmitter2
 
     Promise.all([
       @clearCardFromFriendship card
-      @_delete 'Card', cardId
+      @delete type: 'Card', id: cardId
       @_findAndDelete 'Choice', card: card
       @_findAndDelete 'Comment', card: card
       @_findAndDelete 'Favorite', card: card
@@ -183,7 +201,7 @@ class PeggAdmin extends EventEmitter2
       #
       # To totally nuke the user, also include:
       #
-      @_delete '_User', userId
+      @delete type: '_User', id: userId
       @_findAndDelete '_Session', user: user
       @_findAndDelete '_Role', name: "#{userId}_FacebookFriends"
       @_findAndDelete '_Role', name: "#{userId}_Friends"
@@ -230,7 +248,7 @@ class PeggAdmin extends EventEmitter2
       #
       # To totally nuke the user, also include:
       #
-      # @_delete 'User', userId
+      # @delete type: 'User', id: userId
       # @_findAndDelete 'Session', user: user
       # @_findAndDelete 'UserPrivates', user: user
       #
@@ -397,13 +415,8 @@ class PeggAdmin extends EventEmitter2
         # return a promise that resolves iff all of the rows were deleted, otherwise fails
         Promise.all(
           for item in data?.results
-            @_delete type, item.objectId
+            @delete type: type, id: item.objectId
         )
-
-  _delete: (type, objectId) ->
-    @_parse.deleteAsync type, objectId
-      .then =>
-        @emit 'message', "deleted #{type}: #{objectId}"
 
   _pretty: (thing) ->
     JSON.stringify thing, null, 2

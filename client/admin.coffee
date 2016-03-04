@@ -91,13 +91,15 @@ class Client
     @resetForm 'card'
     $('#card input[name="objectId"]').val data.objectId
     $('#card input[name="question"]').val data.question
-    data.choices = _.values data.choices
-    for choice, i in data.choices
+    i = 0
+    for own choiceId, choice of data.choices
+      $('#card input[name="choices['+i+'][objectId]"]').val choiceId
       $('#card input[name="choices['+i+'][text]"]').val choice.text
       $('#card input[name="choices['+i+'][image][meta][url]"]').val choice.image.meta.url
       $('#card input[name="choices['+i+'][image][meta][source]"]').val choice.image.meta.source
       $('#card input[name="choices['+i+'][image][meta][credit]"]').val choice.image.meta.credit
       $("#card_answer#{i}_image")[0].src = choice.image.meta.url
+      i++
 
   ### Helpers ###
 
@@ -122,8 +124,8 @@ class Client
       .html "working ..."
 
   resetForm: (section) ->
-    $("##{section} form").each ->
-      @reset()
+    $("##{section} img").each -> @src = ''
+    $("##{section} form").each -> @reset()
 
   resetStyles: (section) ->
     $("##{section} .message")
@@ -149,7 +151,7 @@ class ServerActions
 
   _cleanupCard: (card) ->
     for choice, i in card.choices
-      if _.isEmpty(choice.text) and _.isEmpty(choice.image.meta.url)
+      if _.isEmpty(choice.objectId) and _.isEmpty(choice.text) and _.isEmpty(choice.image.meta.url)
         card.choices[i] = undefined
       else
         choice.image.small = choice.image.meta.url
