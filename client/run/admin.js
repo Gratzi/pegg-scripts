@@ -30,6 +30,7 @@
       $('#deleteUser').on('submit', this.deleteUser);
       $('#script_migrateS3').on('submit', this.migrateS3);
       $('#script_updateBesties').on('submit', this.updateBesties);
+      $('#card .imageUrl').change(this.showImage);
       this.server.io.on('message', this.onMessage);
       this.server.io.on('done', this.onDone);
       this.server.io.on('error', this.onError);
@@ -150,7 +151,8 @@
         $('#card input[name="choices[' + i + '][text]"]').val(choice.text);
         $('#card input[name="choices[' + i + '][image][meta][url]"]').val(choice.image.meta.url);
         $('#card input[name="choices[' + i + '][image][meta][source]"]').val(choice.image.meta.source);
-        results1.push($('#card input[name="choices[' + i + '][image][meta][credit]"]').val(choice.image.meta.credit));
+        $('#card input[name="choices[' + i + '][image][meta][credit]"]').val(choice.image.meta.credit);
+        results1.push($("#card_answer" + i + "_image")[0].src = choice.image.meta.url);
       }
       return results1;
     };
@@ -187,6 +189,12 @@
 
     Client.prototype.resetStyles = function(section) {
       return $("#" + section + " .message").parent().removeClass('has-success').removeClass('has-error');
+    };
+
+    Client.prototype.showImage = function() {
+      var i;
+      i = $(this).data('index');
+      return $("#card_answer" + i + "_image")[0].src = this.value;
     };
 
     return Client;

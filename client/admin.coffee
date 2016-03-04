@@ -10,6 +10,7 @@ class Client
     $('#deleteUser').on 'submit',   @deleteUser
     $('#script_migrateS3').on  'submit', @migrateS3
     $('#script_updateBesties').on  'submit', @updateBesties
+    $('#card .imageUrl').change @showImage
     @server.io.on 'message',    @onMessage
     @server.io.on 'done',       @onDone
     @server.io.on 'error',      @onError
@@ -96,6 +97,7 @@ class Client
       $('#card input[name="choices['+i+'][image][meta][url]"]').val choice.image.meta.url
       $('#card input[name="choices['+i+'][image][meta][source]"]').val choice.image.meta.source
       $('#card input[name="choices['+i+'][image][meta][credit]"]').val choice.image.meta.credit
+      $("#card_answer#{i}_image")[0].src = choice.image.meta.url
 
   ### Helpers ###
 
@@ -128,6 +130,10 @@ class Client
       .parent()
         .removeClass 'has-success'
         .removeClass 'has-error'
+
+  showImage: () ->
+    i = $(@).data 'index'
+    $("#card_answer#{i}_image")[0].src = @value
 
 class ServerActions
   constructor: ->
